@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('passenger_rides', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('passenger_id')->references('id')->on('users') ;
+            $table->foreignId('user_id')->references('id')->on('users') ;
             $table->double('cost');
             $table->foreignId('ride_id')->references('id')->on('rides');
             $table->string('departure');

@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -16,7 +17,11 @@ return new class extends Migration
             $table->integer('mobile_no')->unique();
             $table->string('name');
             $table->double('rating');
-            $table->string('porfile_img');
+            $table->string('profile_img');
+            $table->boolean('is_driver');
+            $table->string('current_location');
+            $table->timestamp('mobile_no_verified_at')->nullable();
+            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -29,3 +34,4 @@ return new class extends Migration
         Schema::dropIfExists('users');
     }
 };
+

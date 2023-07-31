@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('rides', function (Blueprint $table) {
             $table->id();
-            $table->string('status');
+            $table->enum('status', array('waiting','active','terminated'))->default('waiting');
             $table->double('price');
             $table->time('time');
-            $table->foreignId('driver_id')->references('id')->on('users'); ;
+            $table->foreignId('user_id')->references('id')->on('users'); ;
             $table->string('departure');
             $table->string('destination');
             $table->timestamps();

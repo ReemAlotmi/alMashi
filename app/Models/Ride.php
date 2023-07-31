@@ -7,6 +7,7 @@ use App\Models\DriverRate;
 use App\Models\PassengerRate;
 use App\Models\PassengerRide;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,9 +23,9 @@ class Ride extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function passengerRides(): HasMany
+    public function passengerRide(): HasOne
     {
-        return $this->hasMany(PassengerRide::class);
+        return $this->hasOne(PassengerRide::class);
     }
 
     public function passengerRates(): HasMany

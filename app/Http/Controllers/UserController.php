@@ -40,7 +40,9 @@ class UserController extends Controller
         $user->mobile_no = $request->mobile_no;
         $user->name = $request->name;
         $user->rating = $request->rating;
-        $user->porfile_img = $request->porfile_img;
+        $user->profile_img = $request->profile_img;
+        $user->is_driver = $request->is_driver;
+        $user->current_location = $request->current_location;
 
         $user->save();
 
