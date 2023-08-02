@@ -13,9 +13,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class User extends Model
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+
+class User extends Authenticatable
 {
-    use HasFactory;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'users';
 
@@ -25,6 +32,10 @@ class User extends Model
         'name',	
         'rating',	
         'porfile_img',
+    ];
+
+    protected $casts = [
+        'mobile_no_verified_at' => 'time',
     ];
 
     public function car(): HasOne
@@ -40,6 +51,11 @@ class User extends Model
     public function passengerRides(): HasMany
     {
         return $this->hasMany(PassengerRide::class);
+    }
+
+    public function requests(): HasMany
+    {
+        return $this->hasMany(Request::class);
     }
 
     public function Rides(): HasMany

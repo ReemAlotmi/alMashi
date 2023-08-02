@@ -28,6 +28,11 @@ class Ride extends Model
         return $this->hasOne(PassengerRide::class);
     }
 
+    public function requests(): HasMany
+    {
+        return $this->hasMany(Request::class);
+    }
+
     public function passengerRates(): HasMany
     {
         return $this->hasMany(PassengerRate::class);

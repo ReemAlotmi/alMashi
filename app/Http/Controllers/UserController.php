@@ -5,9 +5,73 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+
+    public function createUser(Request $request)
+    {
+        try {
+            //Validated
+            $validateUser = Validator::make($request->all(), 
+            [
+                'name' => 'required',
+                'mobile_no' => 'required|unique:users,mobile_no|min:8',
+                'is_driver' => 'required',
+                'plate' => $request->input('is_driver') ? 'required' : 'nullable',
+                'capacity' => $request->input('is_driver') ? 'required' : 'nullable',
+                'type' => $request->input('is_driver') ? 'required' : 'nullable',
+                'color' => $request->input('is_driver') ? 'required' : 'nullable'
+            ]);
+
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+
+            $user = User::create([
+                'name' => $request->name,
+                'mobile_no' => $request->mobile_no,
+                'is_driver' => $request->is_driver,
+                'plate' => $request->plate,
+                'capacity' => $request->capacity,
+                'type' => $request->type,
+                'color' => $request->color,    
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User Created Successfully',
+                'token' => $user->createToken("API TOKEN")->plainTextToken
+            ], 200);
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    
+    public function signIn(){
+
+        return response()->json(["message"=>" done", "data"=>"doneee"]);
+    }
+
+    public function verify(){
+
+        return response()->json(["message"=>" done", "data"=>"doneee"]);
+    }
+    
+    
+    
     /**
      * Display a listing of the resource.
      */

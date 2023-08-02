@@ -17,6 +17,9 @@ use App\Http\Controllers\UserController;
 
 Route::get('users', [UserController::class, 'index']);
 
+Route::post('sign-in', [UserController::class, 'createUser']);
+Route::post('verification-code', [UserController::class, 'verify']);
+
 Route::get('users/{id}', [UserController::class, 'show']);
 
 Route::post('users', [UserController::class, 'store']);

@@ -12,9 +12,14 @@ class DriverRate extends Model
 {
     use HasFactory;
 
-    public function user(): BelongsTo
+    public function driver(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    public function passenger(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'passenger_id');
     }
 
     public function ride(): BelongsTo
