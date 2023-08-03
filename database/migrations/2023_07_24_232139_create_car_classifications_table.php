@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('car_classifications', function (Blueprint $table) {
             $table->id();
             $table->string('classification');
-            $table->boolean('availability');
             $table->integer('max_capacity');
             $table->timestamps();
         });

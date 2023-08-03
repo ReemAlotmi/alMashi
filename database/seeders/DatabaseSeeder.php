@@ -12,6 +12,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+
+        //$this->call(UsersTableSeeder::class);
+        //$this->call(OtherSeeder::class);
+        //instead of putting the below code we can create a class seperatly for each table
+        //and just call the calss here
+
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([

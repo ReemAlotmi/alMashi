@@ -2,7 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OtpController;
+use App\Http\Controllers\RideController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CarClassificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,9 +19,17 @@ use App\Http\Controllers\UserController;
 */
 
 Route::get('users', [UserController::class, 'index']);
+Route::get('classifications', [CarClassificationController::class, 'index']);
+Route::get('view-profile/{id}', [UserController::class, 'viewProfile']);
+Route::post('initiate-ride/{id}', [RideController::class, 'newRide']);
 
-Route::post('sign-in', [UserController::class, 'createUser']);
-Route::post('verification-code', [UserController::class, 'verify']);
+
+Route::post('sign-up', [UserController::class, 'createUser']);
+//Route::post('verification-code', [UserController::class, 'verify']);
+
+Route::post('sign-up/verification-code', [OtpController::class, 'verify']);
+
+//sign-in/verification-code
 
 Route::get('users/{id}', [UserController::class, 'show']);
 

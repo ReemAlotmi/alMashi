@@ -34,9 +34,6 @@ class User extends Authenticatable
         'porfile_img',
     ];
 
-    protected $casts = [
-        'mobile_no_verified_at' => 'time',
-    ];
 
     public function car(): HasOne
     {

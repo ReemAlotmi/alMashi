@@ -13,6 +13,15 @@ class Car extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',	
+        'type',	
+        'classification_id',	
+        'capacity',	
+        'plate',
+        'color',
+    ];
+
     public function classification(): HasOne
     {
         return $this->hasOne(CarClassification::class);
