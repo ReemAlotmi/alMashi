@@ -18,17 +18,23 @@ class RideController extends Controller
 
             $ride= new Ride();
 
+            //must checks if this user has a ride that is active right now
+            //must check if the is actually a driver
+            //must validate the input fields
+            
+
+
             if(empty($request->time) ){
                 $ride->time = Carbon::now();
             }
             else{
                 $ride->time = $request->time;
             }
-                $ride->user_id = $user->id;
-                $ride->price = $request->price; 
-                $ride->departure = $request->departure;
-                $ride->destination = $request->destination;   
-                $ride->save();
+            $ride->user_id = $user->id;
+            $ride->price = $request->price; 
+            $ride->departure = $request->departure;
+            $ride->destination = $request->destination;   
+            $ride->save();
 
             return response()->json(
                 [

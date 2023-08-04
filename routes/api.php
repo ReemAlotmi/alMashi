@@ -20,16 +20,24 @@ use App\Http\Controllers\CarClassificationController;
 
 Route::get('users', [UserController::class, 'index']);
 Route::get('classifications', [CarClassificationController::class, 'index']);
-Route::get('view-profile/{id}', [UserController::class, 'viewProfile']);
-Route::post('initiate-ride/{id}', [RideController::class, 'newRide']);
+Route::get('view-profile', [UserController::class, 'viewProfile'])->middleware('auth:sanctum');
+Route::post('edit-profile', [UserController::class, 'editProfile'])->middleware('auth:sanctum');
+Route::post('edit-mobile-no-verification', [OtpController::class, 'verifyNew'])->middleware('auth:sanctum');
+Route::post('sign-out', [UserController::class, 'signOut'])->middleware('auth:sanctum');
+Route::post('current-location-premission', [UserController::class, 'addLocation'])->middleware('auth:sanctum');
+
+
+Route::post('initiate-ride', [RideController::class, 'newRide']);
 
 
 Route::post('sign-up', [UserController::class, 'createUser']);
-//Route::post('verification-code', [UserController::class, 'verify']);
+Route::post('sign-in', [UserController::class, 'signIn']);
+Route::post('resend-code', [UserController::class, 'signIn']);
 
-Route::post('sign-up/verification-code', [OtpController::class, 'verify']);
 
-//sign-in/verification-code
+Route::post('sign-up/verification-code', [OtpController::class, 'verify']); //->middleware('auth:sanctum');
+Route::post('sign-in/verification-code', [OtpController::class, 'verify']);
+
 
 Route::get('users/{id}', [UserController::class, 'show']);
 

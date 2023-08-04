@@ -34,6 +34,10 @@ class User extends Authenticatable
         'porfile_img',
     ];
 
+    protected $casts = [
+        'mobile_no' => 'integer',
+    ];
+
 
     public function car(): HasOne
     {
