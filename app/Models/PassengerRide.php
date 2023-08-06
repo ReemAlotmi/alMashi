@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PassengerRide extends Model
 {
     use HasFactory;
+    protected $table = 'passenger_rides';
+
+    protected $guarded = [
+        
+    ];
+
 
 
     public function user(): BelongsTo

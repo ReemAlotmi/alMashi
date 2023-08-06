@@ -255,7 +255,7 @@ class UserController extends Controller
             if($request->is_driver){
                 $carClassification= CarClassification::where('classification',$request->classification)->first();
                 $car = new Car();
-                $car->user_id = $request->user_id ;
+                $car->user_id = $user->id ;
                 $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
                 $car->type = $request->type ;
                 $car->capacity = $request->capacity ;
@@ -289,7 +289,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Created Successfully',
+                'message' => 'Please verify your mobile number',
                 'user_id' => $user->id,
                 'otp' => $otp->random
             ], 200);
@@ -330,7 +330,7 @@ class UserController extends Controller
                     'message' => 'Mobile number doesn\'t exist please regiseter'
                 ], 500);
             }
-            $otp = Otp::find($user->id);
+            $otp = Otp::where('user_id',$user->id)->first();
             $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
             $otp->expired_at = Carbon::now()->addMinutes(10);
             $otp->update();
