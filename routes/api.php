@@ -22,39 +22,11 @@ use App\Http\Controllers\CarClassificationController;
 |
 */
 
-
-Route::get('classifications', [CarClassificationController::class, 'index']);
-Route::get('all-rides', [RideController::class, 'allRides']);
-Route::post('reserve-ride', [PassengerRideController::class, 'reserveRide'])->middleware('auth:sanctum');
-Route::post('request-ride', [RequestRideController::class, 'requestRide'])->middleware('auth:sanctum');
-Route::get('check-request-status', [RequestRideController::class, 'requestStatus'])->middleware('auth:sanctum');
-Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
-
-Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
-//accept-ride
-
-Route::post('rate-driver', [DriverRateController::class, 'rateDriver'])->middleware('auth:sanctum');
-Route::post('rate-passenger', [PassengerRateController::class, 'ratePassenger'])->middleware('auth:sanctum');
-
-
-Route::get('my-orders-driver', [RequestRideController::class, 'passengerOrders'])->middleware('auth:sanctum');
-
-
-
-
 Route::get('view-profile', [UserController::class, 'viewProfile'])->middleware('auth:sanctum');
 Route::post('edit-profile', [UserController::class, 'editProfile'])->middleware('auth:sanctum');
 Route::post('edit-profile/resend-code', [UserController::class, 'editProfile'])->middleware('auth:sanctum');
-
-Route::post('edit-mobile-no-verification', [OtpController::class, 'verifyNew'])->middleware('auth:sanctum');
 Route::post('sign-out', [UserController::class, 'signOut'])->middleware('auth:sanctum');
 Route::post('current-location-premission', [UserController::class, 'addLocation'])->middleware('auth:sanctum');
-
-
-Route::post('initiate-ride', [RideController::class, 'newRide'])->middleware('auth:sanctum');
-Route::post('driver-info', [RideController::class, 'driverInfo']);
-
-
 Route::post('sign-up', [UserController::class, 'createUser']);
 Route::post('sign-in', [UserController::class, 'signIn']);
 Route::post('resend-code', [UserController::class, 'signIn']);
@@ -62,6 +34,34 @@ Route::post('resend-code', [UserController::class, 'signIn']);
 
 Route::post('sign-up/verification-code', [OtpController::class, 'verify']); //->middleware('auth:sanctum');
 Route::post('sign-in/verification-code', [OtpController::class, 'verify']);
+Route::post('edit-mobile-no-verification', [OtpController::class, 'verifyNew'])->middleware('auth:sanctum');
+
+
+Route::get('classifications', [CarClassificationController::class, 'index']);
+
+
+Route::get('all-rides', [RideController::class, 'allRides']);
+Route::post('initiate-ride', [RideController::class, 'newRide'])->middleware('auth:sanctum');
+Route::post('driver-info', [RideController::class, 'driverInfo']);
+Route::post('edit-price', [RideController::class, 'editPrice'])->middleware('auth:sanctum');
+Route::post('accept-ride', [RideController::class, 'acceptRide'])->middleware('auth:sanctum');
+Route::get('activate-ride', [RideController::class, 'activateRide'])->middleware('auth:sanctum');
+Route::post('terminate', [RideController::class, 'terminate'])->middleware('auth:sanctum');
+
+
+Route::post('reserve-ride', [PassengerRideController::class, 'reserveRide'])->middleware('auth:sanctum');
+
+
+Route::post('rate-driver', [DriverRateController::class, 'rateDriver'])->middleware('auth:sanctum');
+Route::post('rate-passenger', [PassengerRateController::class, 'ratePassenger'])->middleware('auth:sanctum');
+
+
+Route::post('passneger-request', [RequestRideController::class, 'passengerInfo'])->middleware('auth:sanctum');
+Route::get('my-orders-driver', [RequestRideController::class, 'myOrdersDriver'])->middleware('auth:sanctum');
+Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
+Route::post('request-ride', [RequestRideController::class, 'requestRide'])->middleware('auth:sanctum');
+Route::get('check-request-status', [RequestRideController::class, 'requestStatus'])->middleware('auth:sanctum');
+//Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
 
 
 

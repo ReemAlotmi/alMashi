@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('passenger_rides', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->references('id')->on('users') ;
+            $table->foreignId('user_id')->references('id')->on('users');
             $table->double('cost');
             $table->foreignId('ride_id')->references('id')->on('rides');
             $table->string('departure');
             $table->string('destination');
             $table->timestamps();
+
+
+            $table->double('cost')->nullable()->change();
+            $table->unsignedBigInteger('ride_id')->nullable()->change();
         });
     }
 

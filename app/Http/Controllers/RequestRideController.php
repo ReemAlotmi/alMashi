@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use Throwable;
 use App\Models\Ride;
+use App\Models\User;
+use App\Helpers\Helper;
 use App\Models\RequestRide;
 use Illuminate\Http\Request;
+use App\Models\PassengerRate;
 use App\Models\PassengerRide;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,23 +16,54 @@ use App\Http\Controllers\Controller;
 
 class RequestRideController extends Controller
 {
+    public function passengerInfo(Request $request){
+        // {"profile_img": " ",
+        //     "name": "",
+        //     "rate" : " "
+        //     "comments": [] }
+        
+        try{
+            //$user = auth()->user();
+            $rqst= RequestRide::find($request->request_id);
+            $psngr= User::find($rqst->user_id);
+            $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->id)->get();
+
+            return response()->json([
+                'status' => true,
+                'profile_img' => $psngr->profile_img,
+                'name' => $psngr->name,
+                'Rating' => "must be calculated",//????????????????????????????
+                'comments' => $comments 
+            ], 500);
+            
+
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
     public function requestRide(Request $request){
         try{
             $user = auth()->user();
             $ride = PassengerRide::where('user_id',$user->id)->first();
 
-            if(!empty(RequestRide::where('user_id',$user->id)->first())){
+            $rqst= RequestRide::where('user_id',$user->id)->where('status', ['waiting', 'accepted'])->get();
+            if(count($rqst) != 0){
                 return response()->json([
                     'status' => false,
                     'message' => 'can\'t create multiple requests'
                 ], 500);
             }
-            $rqst= new RequestRide();
 
+            $rqst= new RequestRide();
             $rqst->user_id = $user->id;
             $rqst->ride_id = $request->ride_id;
-            $rqst->departure = $ride->departure;
-            $rqst->destination = $ride->destination;
+            $rqst->departure = $request->departure;
+            $rqst->destination = $request->destination;
+            $rqst->passenger_ride_id = $ride->id;
             $rqst->save();
 
             return response()->json([
@@ -124,7 +158,7 @@ class RequestRideController extends Controller
         }
     }
 
-    public function passengerOrders(){
+    public function myOrdersDriver(){//get all the requests for a specific ride
         // "name":"",
         // "profile_img": "",
         // "rating" : "',
@@ -134,17 +168,27 @@ class RequestRideController extends Controller
 
         try{
             $user = auth()->user();
-            $ride = Ride::where('id', $user->id)->first(); //get the ride id from here to search for the requests of this ride
+            $ride = Ride::where('user_id', $user->id)->first(); //get the ride id from here to search for the requests of this ride
+            //return $ride;
             $rqsts= RequestRide::where('ride_id',$ride->id)->get(); //get the requests that match the ride_id
+            $data=[];
             foreach($rqsts as $rqst){
-
+                //calculate the destinace here
+                $distance = Helper::clacDistance($ride->departure, $rqst->departure);
+                array_push($data, [
+                    "name" =>$rqst->user->name,
+                    "profile_img" =>$rqst->user->profile_img,
+                    "rating" =>$rqst->user->rating,
+                    "NoPassengers" => 1,
+                    "distance" => $distance,
+                    "request_id" =>$rqst->id
+                ]);
             }
-
-            
 
             return response()->json([
                 'status' => true,
-                'message' => ''
+                'message' => 'Orders for this ride',
+                'data'=> $data
             ], 200);
 
         }

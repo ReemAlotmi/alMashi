@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('passenger_rides', function (Blueprint $table) {
-            $table->double('cost')->nullable()->change();
-            $table->unsignedBigInteger('ride_id')->nullable()->change();
+        Schema::table('requests', function (Blueprint $table) {
+            $table->enum('status', ['waiting', 'rejected', 'accepted', 'terminated'])->default('waiting')->nullable()->change();
         });
     }
 

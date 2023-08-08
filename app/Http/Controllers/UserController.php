@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Car;
 use App\Models\Otp;
+use App\Models\Ride;
 use App\Models\User;
+use App\Helpers\Helper;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -175,12 +177,45 @@ class UserController extends Controller
         try{
             $user = User::where('id', auth()->user()->id)->first();
             $user->current_location = $request->current_location;
-            $user->update();
+            $user->save();
+
+
+
+            // "profile_img": "https://www.gooFYADFQAAAAAdAAAAABAE",
+            // "name": "Reem",
+            // "rating": 3,
+            // "price": 10,
+            // "distance": " "     
+            // "destination": "dskjfdsfjk"
+
+            
+            //get all the rides 
+            //compare the departure of all of these rides with the user deprature
+            //get only the rides that is distant by 10km or less 
+            
+            $availbleRides= Ride::where('status', ['waiting'])->get();
+            $rides=[];
+
+            foreach($availbleRides as $availbleRide){
+                //calculate the distnace here
+                $distance = Helper::clacDistance($availbleRide->departure, $request->current_location);
+                if($distance <= 10){
+                    array_push($rides, [
+                        "name" =>$availbleRide->user->name,
+                        "profile_img" =>$availbleRide->user->profile_img,
+                        "rating" =>$availbleRide->user->rating, ///rating as a driver
+                        "price" => $availbleRide->price,
+                        "distance" => $distance,
+                        "destination" =>$availbleRide->destination
+                    ]);
+                }
+                
+            }
 
             return response()->json([
                 'status' => true,
                 'message' => 'Location added successfully',
-                'user' => $user
+                'Close rides' => $rides
             ], 500);
 
         }
@@ -254,15 +289,15 @@ class UserController extends Controller
 
             if($request->is_driver){
                 $carClassification= CarClassification::where('classification',$request->classification)->first();
-                $car = new Car();
-                $car->user_id = $user->id ;
-                $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
-                $car->type = $request->type ;
-                $car->capacity = $request->capacity ;
-                $car->color = $request->color ;
-                $car->plate = $request->plate;
+                // $car = new Car();
+                // $car->user_id = $user->id ;
+                // $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
+                // $car->type = $request->type ;
+                // $car->capacity = $request->capacity ;
+                // $car->color = $request->color ;
+                // $car->plate = $request->plate;
 
-                $car->save();
+                // $car->save();
 
 
                 Car::create([
@@ -302,7 +337,6 @@ class UserController extends Controller
             ], 500);
         }
     }
-
     
     public function signIn(Request $request){
 
@@ -353,23 +387,12 @@ class UserController extends Controller
         }
     }
 
-    
-    
-    
     /**
      * Display a listing of the resource.
      */
     public function index(){ 
         $users = User::all();
         return response()->json($users);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -403,14 +426,6 @@ class UserController extends Controller
         $users = User::where('id',$id)->get();
 
         return response()->json($users);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**

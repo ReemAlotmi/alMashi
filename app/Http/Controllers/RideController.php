@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use Throwable;
 use App\Models\Ride;
 use App\Models\User;
+use App\Helpers\Helper;
 use App\Models\DriverRate;
+use App\Models\RequestRide;
 use Illuminate\Http\Request;
+use App\Models\PassengerRide;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -68,18 +71,19 @@ class RideController extends Controller
     }
 
     public function allRides(){ //returns all rides that is in waiting status
+        
         try{
+            //need to modify the rating and show it as driver rating
             $rides = Ride::where('status', 'waiting')->get();
             $rides = DB::table('rides')
                     ->join('users', 'users.id', '=', 'rides.user_id')
                     ->where('rides.status', '=', 'waiting')
                     ->select('users.profile_img', 'users.name', 'users.rating', 'rides.price', 'rides.destination', 'rides.id')
-                    ->get();
-            //the distance calculation code 
+                    ->get(); 
             return response()->json([
                 'status' => true,
                 'Rides' => $rides
-            ], 500);
+            ], 200);
         }
         catch (\Throwable $th) {
             return response()->json([
@@ -88,7 +92,6 @@ class RideController extends Controller
             ], 500);
         }
     }
-
     
     public function index(){ //returns all rides that is in waiting status
         try{
@@ -101,7 +104,7 @@ class RideController extends Controller
             return response()->json([
                 'status' => true,
                 'Rides' => $rides
-            ], 500);
+            ], 200);
         }
         catch (\Throwable $th) {
             return response()->json([
@@ -123,6 +126,44 @@ class RideController extends Controller
                 'name' => $user->name,
                 'Rating' => $user->rating,
                 'comments' => $comments 
+            ], 200);
+
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function editPrice(Request $request){
+        try{
+            $user = auth()->user();
+            $rqst= RequestRide::find($request->request_id);
+            $ride= Ride::find($rqst->ride_id);
+            
+            if($user->id == $ride->user_id){
+                //edit the price
+                $psngr= PassengerRide::where('id',$rqst->passenger_ride_id)->first();
+                $psngr->cost = $request->cost;
+                $psngr->ride_id = $ride->id;
+                $psngr->save();
+
+                //editing the price means that the driver has accepted this request
+                $rqst->status = "accepted";
+                $rqst->save();
+
+
+                return response()->json([
+                    'status' => true,
+                    'message' => "Price changed successfully"
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => "Only the driver for this ride can edit the price"
             ], 500);
 
         }
@@ -133,4 +174,88 @@ class RideController extends Controller
             ], 500);
         }
     }
+
+    public function acceptRide(Request $request){
+        // ride_id:
+        // request_id:
+        try{
+            $user = auth()->user();
+            $rqst= RequestRide::find($request->request_id);
+            $ride= Ride::find($request->ride_id);
+            
+            if($user->id == $ride->user_id){
+                //add the ride information to the passenger ride
+                $psngr= PassengerRide::where('id',$rqst->passenger_ride_id)->first();
+                $psngr->cost = $ride->price;
+                $psngr->ride_id = $ride->id;
+                $psngr->save();
+
+                //editing the price means that the driver has accepted this request
+                $rqst->status = "accepted";
+                $rqst->save();
+
+
+                return response()->json([
+                    'status' => true,
+                    'message' => "Ride request accepted successfully"
+                ], 200);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => "Only the driver for this ride can accept the request"
+            ], 500);
+
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function activateRide(){
+        try{
+            $user = auth()->user();
+            $ride= Ride::where('user_id', $user->id)->where('status', 'active')->first();
+            $psngr= PassengerRide::where('ride_id', $ride->id)->first();
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function terminate(Request $request){
+        try{
+            $user = auth()->user();
+            $ride= Ride::where('id', $request->ride_id)->first();
+            $rqst= RequestRide::where('ride_id', $ride->id)->where('status', 'accepted')->first();
+            //should check if this ride driver is the same as the user who wants to terminate this ride?? authorization?
+            if($user->id !== $ride->user_id){
+                return response()->json([
+                    'status' => false,
+                    'message' => "Only the driver of this ride can terminate the ride "
+                ], 500);
+            }
+            $rqst->status = 'terminated';
+            $rqst->save();
+            $ride->status = 'terminated';
+            $ride->save();
+            return response()->json([
+                'status' => true,
+                'message' => 'Ride terminated successfully'
+            ], 200);
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
 }
