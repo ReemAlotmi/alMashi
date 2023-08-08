@@ -1,5 +1,9 @@
 <?php
 namespace App\Helpers;
+
+use App\Models\DriverRate;
+use App\Models\PassengerRate;
+
 class Helper {
     public static function clacDistance($coor1, $coor2) {
 
@@ -27,7 +31,24 @@ class Helper {
 
 
     public static function getDriverRating($driverId){
+        $rates= DriverRate::where('driver_id', $driverId)->get();
 
+        $totalRates= $rates->sum('rate');
+        return $rates->count() > 0 ? $totalRates / $rates->count() : 0;
+    }
+
+    public static function getPassengerRating($passengerId){
+        $rates= PassengerRate::where('passenger_id', $passengerId)->get();
+
+        $totalRates= $rates->sum('rate');
+        return $rates->count() > 0 ? $totalRates / $rates->count() : 0;
+    }
+
+    public static function getRating($userId){
+        $rate = Helper::getPassengerRating($userId);
+        $rate += Helper::getDriverRating($userId);
+
+        return $rate/2;
     }
 
 }

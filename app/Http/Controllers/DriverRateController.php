@@ -58,12 +58,12 @@ class DriverRateController extends Controller
             $rating->save();
 
             //code for calculating the total rates for this driver
-            $rates= DriverRate::where('driver_id', $ride->user_id)->get();
-            $totalRates= $rates->sum('rate');
+            // $rates= DriverRate::where('driver_id', $ride->user_id)->get();
+            // $totalRates= $rates->sum('rate');
             
-            $thisDriver= User::find($ride->user_id);
-            $thisDriver->rating = $rates->count() > 0 ? $totalRates / $rates->count() : 0;
-            $thisDriver->save();
+            // $thisDriver= User::find($ride->user_id);
+            // $thisDriver->rating = $rates->count() > 0 ? $totalRates / $rates->count() : 0;
+            // $thisDriver->save();
 
 
             return response()->json([

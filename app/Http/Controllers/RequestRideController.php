@@ -23,7 +23,6 @@ class RequestRideController extends Controller
         //     "comments": [] }
         
         try{
-            //$user = auth()->user();
             $rqst= RequestRide::find($request->request_id);
             $psngr= User::find($rqst->user_id);
             $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->id)->get();
@@ -32,7 +31,7 @@ class RequestRideController extends Controller
                 'status' => true,
                 'profile_img' => $psngr->profile_img,
                 'name' => $psngr->name,
-                'Rating' => "must be calculated",//????????????????????????????
+                'Rating' => Helper::getPassengerRating($psngr->id),
                 'comments' => $comments 
             ], 500);
             
@@ -168,17 +167,19 @@ class RequestRideController extends Controller
 
         try{
             $user = auth()->user();
-            $ride = Ride::where('user_id', $user->id)->first(); //get the ride id from here to search for the requests of this ride
+            $ride = Ride::where('user_id', $user->id)->where('status', 'waiting')->first(); //get the ride id from here to search for the requests of this ride
             //return $ride;
-            $rqsts= RequestRide::where('ride_id',$ride->id)->get(); //get the requests that match the ride_id
+            $rqsts= RequestRide::where('ride_id',$ride->id)->where('status', 'waiting')->get(); //get the requests that match the ride_id
+            //return $rqsts;
             $data=[];
             foreach($rqsts as $rqst){
                 //calculate the destinace here
                 $distance = Helper::clacDistance($ride->departure, $rqst->departure);
+                $user= User::find($rqst->user_id);
                 array_push($data, [
-                    "name" =>$rqst->user->name,
-                    "profile_img" =>$rqst->user->profile_img,
-                    "rating" =>$rqst->user->rating,
+                    "name" =>$user->name,
+                    "profile_img" =>$user->profile_img,
+                    "rating" =>Helper::getPassengerRating($user->id),
                     "NoPassengers" => 1,
                     "distance" => $distance,
                     "request_id" =>$rqst->id

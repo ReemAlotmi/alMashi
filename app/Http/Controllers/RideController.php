@@ -124,7 +124,7 @@ class RideController extends Controller
                 'status' => true,
                 'profile_img' => $user->profile_img,
                 'name' => $user->name,
-                'Rating' => $user->rating,
+                'Rating' => Helper::getDriverRating($user->id),
                 'comments' => $comments 
             ], 200);
 
@@ -183,6 +183,7 @@ class RideController extends Controller
             $rqst= RequestRide::find($request->request_id);
             $ride= Ride::find($request->ride_id);
             
+            
             if($user->id == $ride->user_id){
                 //add the ride information to the passenger ride
                 $psngr= PassengerRide::where('id',$rqst->passenger_ride_id)->first();
@@ -193,6 +194,10 @@ class RideController extends Controller
                 //editing the price means that the driver has accepted this request
                 $rqst->status = "accepted";
                 $rqst->save();
+
+                //changing the ride status to active
+                $ride->status = "active";
+                $ride->save();
 
 
                 return response()->json([
@@ -216,10 +221,30 @@ class RideController extends Controller
     }
 
     public function activateRide(){
+
+        // "departure": " ",
+        // "destination": " ",
+        // "NoPassengers": " "
+        //user name
+        //img
+        //rating
+
         try{
             $user = auth()->user();
             $ride= Ride::where('user_id', $user->id)->where('status', 'active')->first();
-            $psngr= PassengerRide::where('ride_id', $ride->id)->first();
+            $psngr= $ride->passengerRide;
+
+
+            return response()->json([
+                'status' => false,
+                'name' => $ride->passengerRide->user->name,
+                'profile_img' => $ride->passengerRide->user->profile_img,
+                'rating' => Helper::getPassengerRating($psngr->user_id),
+                'NoPassenger' => 1,
+                'departure' => $psngr->departure,
+                'destination' => $psngr->destination,
+            ], 500);
+            
         }
         catch (\Throwable $th) {
             return response()->json([

@@ -42,7 +42,7 @@ Route::get('classifications', [CarClassificationController::class, 'index']);
 
 Route::get('all-rides', [RideController::class, 'allRides']);
 Route::post('initiate-ride', [RideController::class, 'newRide'])->middleware('auth:sanctum');
-Route::post('driver-info', [RideController::class, 'driverInfo']);
+Route::post('driver-info', [RideController::class, 'driverInfo'])->middleware('auth:sanctum');
 Route::post('edit-price', [RideController::class, 'editPrice'])->middleware('auth:sanctum');
 Route::post('accept-ride', [RideController::class, 'acceptRide'])->middleware('auth:sanctum');
 Route::get('activate-ride', [RideController::class, 'activateRide'])->middleware('auth:sanctum');
@@ -61,7 +61,6 @@ Route::get('my-orders-driver', [RequestRideController::class, 'myOrdersDriver'])
 Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
 Route::post('request-ride', [RequestRideController::class, 'requestRide'])->middleware('auth:sanctum');
 Route::get('check-request-status', [RequestRideController::class, 'requestStatus'])->middleware('auth:sanctum');
-//Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
 
 
 

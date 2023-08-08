@@ -39,7 +39,9 @@ class UserController extends Controller
                 return response()->json(
                 [
                     'status' => true,
-                    'name' => $user->name,   
+                    'name' => $user->name, 
+                    'profile_img' => $user->profile_img,
+                    'rating' => Helper::getRating($user->id),  
                     'mobile_no' => $user->mobile_no,   
                     'plate' => $car->plate,   
                     'classification' => $carClassification->classification,
@@ -52,7 +54,9 @@ class UserController extends Controller
             return response()->json(
                 [
                     'status' => true,
-                    'name' => $user->name,   
+                    'name' => $user->name, 
+                    'profile_img' => $user->profile_img,
+                    'rating' => Helper::getRating($user->id),   
                     'mobile_no' => $user->mobile_no,   
                     'plate' => "",   
                     'classification' => "",   
@@ -203,7 +207,7 @@ class UserController extends Controller
                     array_push($rides, [
                         "name" =>$availbleRide->user->name,
                         "profile_img" =>$availbleRide->user->profile_img,
-                        "rating" =>$availbleRide->user->rating, ///rating as a driver
+                        "rating" => Helper::getDriverRating($availbleRide->user->id),
                         "price" => $availbleRide->price,
                         "distance" => $distance,
                         "destination" =>$availbleRide->destination
@@ -227,10 +231,11 @@ class UserController extends Controller
         }
     }
 
-    public function signOut(Request $request){
+    public function signOut(){
         try{
-            $user = auth()->user();
-            PersonalAccessToken::where('tokenable_id', $user->id)->delete();
+            $user= auth()->user();
+            $user->tokens()->delete();
+            //PersonalAccessToken::where('tokenable_id', $user->id)->delete();
             return response()->json([
                 'status' => true,
                 'message' => 'user signed out'
