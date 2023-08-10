@@ -192,7 +192,7 @@ class UserController extends Controller
                 'status' => true,
                 'message' => 'Location added successfully',
                 'Close rides' => $rides
-            ], 500);
+            ], 200);
 
         }
         catch (\Throwable $th) {
