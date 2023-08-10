@@ -13,25 +13,15 @@ use Laravel\Sanctum\PersonalAccessToken;
 class OtpController extends Controller
 {
     public function verify(Request $request){
-
-        // $user = auth()->user();
-        
         $user = User::find($request->user_id);
         $otp = Otp::where('user_id', $user->id)->first();
         
-        
-           //dd($request->random, $user,$otp );
-           // dd($otp->random == (int)$request->random);
-        
-
         try{            
             if ($otp->random == (int)$request->random) {
                 if(Carbon::now()->lt($otp->expired_at)){
                     
                     $user->mobile_no_verified_at = Carbon::now();
                     $user->save();
-
-                    // $token = PersonalAccessToken::where('tokenable_id', $user->id)->first();
 
                     return response()->json([
                         'status' => true,

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('requests', function (Blueprint $table) {
-            $table->enum('status', ['waiting', 'rejected', 'accepted', 'terminated'])->default('waiting')->nullable()->change();
+        Schema::table('cars', function (Blueprint $table) {
+            $table->timestamp('deleted_at')->nullable();
         });
     }
 
@@ -21,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('cars', function (Blueprint $table) {
+            //
+        });
     }
 };

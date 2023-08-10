@@ -20,8 +20,9 @@ class RideController extends Controller
         try{
             $user = User::where('id',auth()->user()->id)->first();
             //must check if the user is actually a driver --handled in front-end?--
+            //dd(!($user->is_driver));
             if(!($user->is_driver)){
-                response()->json([
+                return response()->json([
                     'status' => false,
                     'message' => 'You need to register your car information before initiating a ride!'
                 ], 500);

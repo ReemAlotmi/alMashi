@@ -78,91 +78,63 @@ class UserController extends Controller
         try{
             //$user = auth()->user();
             $user = User::where('id', auth()->user()->id)->first();
-            //return $user;
-
-            $user->profile_img = $request->profile_img ?? $user->profile_img;
-            $user->name = $request->name ?? $user->name ;
             
-            if($user->is_driver){ //if the user is driver and wants to update his car info
-                $car = Car::where('user_id', $user->id)->first();
+            $validateUser = Validator::make($request->all(), 
+            [
+                'name' => 'required',
+                'profile_img' => 'required',
+            ]);
 
-                if(!empty($request->classification)){
-                    $carClassification= CarClassification::where('classification',$request->classification)->first();
-                     $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user             
-                }
-                $car->type = $request->type ?? $car->type;
-                $car->capacity = $request->capacity ?? $car->capacity;
-                $car->color = $request->color ?? $car->color;
-                $car->plate = $request->plate ?? $car->plate;
-
-                $car->update();
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
             }
 
-            if(!($user->is_driver) && !empty($request->classification)){//if the user is not a driver but wants to be one by adding his car info
+            $user->name = $request->name;
+            $user->profile_img = $request->profile_img;
 
-                $validateUser = Validator::make($request->all(), 
-                [
-                    'classification' => 'required',
-                    'type' => 'required',
-                    'capacity' => 'required',
-                    'color' => 'required',
-                    'plate' => 'required'
-                ]);
-
-                if($validateUser->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'validation error',
-                        'errors' => $validateUser->errors()
-                    ], 401);
-                }
-
-
-                $carClassification= CarClassification::where('classification',$request->classification)->first();
-                $car = new Car();
-                $car->user_id = $user->id ;
-                $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
-                $car->type = $request->type ;
-                $car->capacity = $request->capacity ;
-                $car->color = $request->color ;
-                $car->plate = $request->plate;
-
-                $car->save();
-
-                $user->is_driver = true;
-            }
+            //checks the car information fields
+            $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
+            $filledFields = [];
             
-            $user->update();
-
-            if ($request->mobile_no != $user->mobile_no && !empty($request->mobile_no)){ //if the user wants to change his mobile he must verify it first or it wont be changed
-                //Validated
-                $validateUser = Validator::make($request->all(), 
-                [
-                    'mobile_no' => 'numeric|digits_between:10,12'
-                ]);
-
-                if($validateUser->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'validation error',
-                        'errors' => $validateUser->errors()
-                    ], 401);
+            foreach ($fields as $field) {
+                if (filled($field)) {
+                    $filledFields[] = $field;
                 }
                 
-                $otp = Otp::find($user->id);
-                $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
-                $otp->expired_at = Carbon::now()->addMinutes(10);
-                $otp->update();
-
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'you should verify the new mobile_no or it wont be updated',
-                    'otp' => $otp->random
-                ], 200);
+            }
+            //dd(count($fields));
+            
+            if($user->is_driver){ //this user is driver
+                //$this->updateCar($request, $user);
+                $response = $this->updateCar($request, $user);
+                //dd($response->getContent());
+                if ($response->getStatusCode() == 401) {
+                    return json_decode($response->getContent());
+             }
             }
 
+            if(!($user->is_driver) && !(count($filledFields) === 0)){//if the user is not a driver but wants to be one by adding his car info
+                $response = $this->addCar($request, $user);
+                //dd($response->getContent());
+                if ($response->getStatusCode() == 401) {
+                    return json_decode($response->getContent());
+             }
+            }
 
+            $response = $this->updateMobile($request->mobile_no, $user);
+                if ($response->getStatusCode() == 401) {
+                    return json_decode($response->getContent());
+            } elseif($response->getStatusCode() == 200){
+                    //$generatedOtp= 
+                    dd(($response->getContent()));
+            }
+            
+
+            $user->save();
             return response()->json([
                 'status' => true,
                 'message' => 'User updated successfully',
@@ -235,7 +207,9 @@ class UserController extends Controller
         try{
             $user= auth()->user();
             $user->tokens()->delete();
+            //dd();
             //PersonalAccessToken::where('tokenable_id', $user->id)->delete();
+
             return response()->json([
                 'status' => true,
                 'message' => 'user signed out'
@@ -476,5 +450,142 @@ class UserController extends Controller
     {
         User::where('id', $id)
         ->delete();
+    }
+
+    protected function updateMobile($mobile_no, $user){
+        //dd($request, $user);
+        if ($mobile_no != $user->mobile_no ){ //if the user wants to change his mobile he must verify it first or it wont be changed
+            //Validated
+            $validateUser = Validator::make($mobile_no, ['mobile_no' => 'numeric|digits_between:10,12']);
+
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+            
+            $otp = Otp::find($user->id);
+            $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
+            $otp->expired_at = Carbon::now()->addMinutes(10);
+            $otp->save();
+
+            // $user->update();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'you should verify the new mobile_no or it wont be updated',
+                'otp' => $otp->random
+            ], 200);
+        }
+    }
+
+    protected function addCar($request, $user){
+        //checks the car information fields
+        $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
+        
+        $filledFields = [];
+        
+        foreach ($fields as $field) {
+            if (filled($field)) {
+                $filledFields[] = $field;
+            }
+            
+        }  
+        //dd(count($filledFields) > 0 && count($filledFields) < count($fields));
+
+        if (count($filledFields) > 0 && count($filledFields) < count($fields)) {// At least one field is filled, but not all of them
+            // Handle the error or show appropriate response
+            $validateUser = Validator::make($request->all(), 
+            [
+                'plate' => 'required',
+                'classification' => 'required', 
+                'type' => 'required', 
+                'capacity' => 'sometimes|required|numeric', 
+                'color' => 'required'
+            ]);
+            if($validateUser->fails()){
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+        }
+        //otherwise all the fields is filled
+        //add new
+        $carClassification= CarClassification::where('classification',$request->classification)->first();
+        $car = new Car();
+        $car->user_id = $user->id ;
+        $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
+        $car->type = $request->type ;
+        $car->capacity = $request->capacity ;
+        $car->color = $request->color ;
+        $car->plate = $request->plate;
+        $car->save();
+        $user->is_driver = true;
+        return response()->json([
+            'status' => true
+        ], 200);
+    }
+
+    protected function updateCar($request, $user){
+        //checks the car information fields
+        $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
+
+        $filledFields = [];
+
+        foreach ($fields as $field) {
+            if (filled($field)) {
+                $filledFields[] = $field;
+            }
+        
+        }
+
+        if (count($filledFields) > 0 && count($filledFields) < count($fields)) {// At least one field is filled, but not all of them
+            // Handle the error or show appropriate response
+            $validateUser = Validator::make($request->all(), 
+            [
+                 'plate' => 'required',
+                 'classification' => 'required', 
+                 'type' => 'required',
+                 'capacity' => 'required', 
+                 'color' => 'required'
+            ]);
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+        } elseif (count($filledFields) === 0) {// The user wants to remove his car, subsequently he won't be a driver anymore
+            // No fields are filled
+            $car= Car::where('user_id', $user->id)->first();
+            $car->delete();
+            $user->is_driver= false;
+            $user->save();
+            return response()->json([
+                'status' => true
+                //'message' => 'User updated successfully',
+                //'user' => $user
+            ], 200);
+            
+
+        } else {// All fields are filled means he wants to update his car info 
+            $carClassification= CarClassification::where('classification',$request->classification)->first();
+            $car= Car::where('user_id', $user->id)->update([
+                'classification_id' => $carClassification->id, //the car calssifications table get the id of the classification that received from the user
+                'type' => $request->type,
+                'capacity' => $request->capacity,
+                'color' => $request->color,
+                'plate' => $request->plate,
+            ]);
+            return response()->json([
+                'status' => true
+            ], 200);
+        }
     }
 }
