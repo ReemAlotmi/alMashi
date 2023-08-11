@@ -25,7 +25,7 @@ class RideController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'You need to register your car information before initiating a ride!'
-                ], 500);
+                ], 401);
             }
             
             //must checks if this user has a ride that is active right now
@@ -34,7 +34,7 @@ class RideController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'You can\'t initiate a ride because you have an active ride!'
-                ], 500);
+                ], 401);
             }
 
             //must validate the input fields
@@ -72,7 +72,6 @@ class RideController extends Controller
     }
 
     public function allRides(){ //returns all rides that is in waiting status
-        
         try{
             //need to modify the rating and show it as driver rating
             $rides = Ride::where('status', 'waiting')->get();
@@ -165,7 +164,7 @@ class RideController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "Only the driver for this ride can edit the price"
-            ], 500);
+            ], 401);
 
         }
         catch (\Throwable $th) {
@@ -210,7 +209,7 @@ class RideController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => "Only the driver for this ride can accept the request"
-            ], 500);
+            ], 401);
 
         }
         catch (\Throwable $th) {
@@ -237,14 +236,14 @@ class RideController extends Controller
 
 
             return response()->json([
-                'status' => false,
+                'status' => true,
                 'name' => $ride->passengerRide->user->name,
                 'profile_img' => $ride->passengerRide->user->profile_img,
                 'rating' => Helper::getPassengerRating($psngr->user_id),
                 'NoPassenger' => 1,
                 'departure' => $psngr->departure,
                 'destination' => $psngr->destination,
-            ], 500);
+            ], 200);
             
         }
         catch (\Throwable $th) {
@@ -265,7 +264,7 @@ class RideController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => "Only the driver of this ride can terminate the ride "
-                ], 500);
+                ], 401);
             }
             $rqst->status = 'terminated';
             $rqst->save();

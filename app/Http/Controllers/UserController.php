@@ -106,12 +106,9 @@ class UserController extends Controller
                 }
                 
             }
-            //dd(count($fields));
-            
+
             if($user->is_driver){ //this user is driver
-                //$this->updateCar($request, $user);
                 $response = $this->updateCar($request, $user);
-                //dd($response->getContent());
                 if ($response->getStatusCode() == 401) {
                     return json_decode($response->getContent());
              }
@@ -119,26 +116,30 @@ class UserController extends Controller
 
             if(!($user->is_driver) && !(count($filledFields) === 0)){//if the user is not a driver but wants to be one by adding his car info
                 $response = $this->addCar($request, $user);
-                //dd($response->getContent());
                 if ($response->getStatusCode() == 401) {
                     return json_decode($response->getContent());
              }
             }
-
-            $response = $this->updateMobile($request->mobile_no, $user);
-                if ($response->getStatusCode() == 401) {
-                    return json_decode($response->getContent());
-            } elseif($response->getStatusCode() == 200){
-                    //$generatedOtp= 
-                    dd(($response->getContent()));
-            }
             
+            if($request->mobile_no != $user->mobile_no ){ //if the user wants to change his mobile he must verify it first or it wont be changed
+                $response = $this->updateMobile($request->mobile_no, $user);
+                    if ($response->getStatusCode() == 401) {
+                        return json_decode($response->getContent());
+                    } elseif($response->getStatusCode() == 200){
+                        $content = json_decode($response->getContent(), true);
+                        // Access the desired key from the content
+                        $otp = $content['otp'];
+                           
+                          
+                 }
+            }  
 
             $user->save();
             return response()->json([
                 'status' => true,
                 'message' => 'User updated successfully',
-                'user' => $user
+                'user' => $user,
+                'otp' => $otp ?? null 
             ], 200);
         }
         catch (\Throwable $th) {
@@ -213,7 +214,7 @@ class UserController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'user signed out'
-            ], 500);
+            ], 200);
         }
         catch (\Throwable $th) {
             return response()->json([
@@ -341,7 +342,7 @@ class UserController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'Mobile number doesn\'t exist please regiseter'
-                ], 500);
+                ], 401);
             }
             $otp = Otp::where('user_id',$user->id)->first();
             $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
@@ -453,10 +454,12 @@ class UserController extends Controller
     }
 
     protected function updateMobile($mobile_no, $user){
-        //dd($request, $user);
-        if ($mobile_no != $user->mobile_no ){ //if the user wants to change his mobile he must verify it first or it wont be changed
-            //Validated
-            $validateUser = Validator::make($mobile_no, ['mobile_no' => 'numeric|digits_between:10,12']);
+        //Validated
+        
+        $validateUser = Validator::make(
+            ['mobile_no' => $mobile_no],
+            ['mobile_no' => 'numeric|digits_between:10,12']);
+        //dd($validateUser->fails());
 
             if($validateUser->fails()){
                 return response()->json([
@@ -466,10 +469,10 @@ class UserController extends Controller
                 ], 401);
             }
             
-            $otp = Otp::find($user->id);
+            $otp = Otp::where("user_id", $user->id)->first();
             $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
             $otp->expired_at = Carbon::now()->addMinutes(10);
-            $otp->save();
+            $otp->update();
 
             // $user->update();
 
@@ -478,7 +481,7 @@ class UserController extends Controller
                 'message' => 'you should verify the new mobile_no or it wont be updated',
                 'otp' => $otp->random
             ], 200);
-        }
+        
     }
 
     protected function addCar($request, $user){
@@ -588,4 +591,6 @@ class UserController extends Controller
             ], 200);
         }
     }
+
+    
 }

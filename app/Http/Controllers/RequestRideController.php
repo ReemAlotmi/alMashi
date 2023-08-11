@@ -33,7 +33,7 @@ class RequestRideController extends Controller
                 'name' => $psngr->name,
                 'Rating' => Helper::getPassengerRating($psngr->id),
                 'comments' => $comments 
-            ], 500);
+            ], 200);
             
 
         }
@@ -54,7 +54,7 @@ class RequestRideController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'can\'t create multiple requests'
-                ], 500);
+                ], 401);
             }
 
             $rqst= new RequestRide();

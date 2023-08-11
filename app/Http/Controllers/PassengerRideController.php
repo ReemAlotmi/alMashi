@@ -27,7 +27,7 @@ class PassengerRideController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'You can\'t reserve a ride because you have an active ride!'
-                ], 500);
+                ], 401);
             }
 
             $passengeRide= new PassengerRide();
@@ -76,7 +76,7 @@ class PassengerRideController extends Controller
                 'status' => true,
                 'message' => "Passenger ride created",
                 'Rides' => $rides
-            ], 500);
+            ], 200);
             
 
         }

@@ -21,7 +21,7 @@ class DriverRateController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'can\'t rate unless ride is terminated'
-                ], 500);
+                ], 401);
             }
             //validate the fields
             $validateUser = Validator::make($request->all(), 
@@ -43,7 +43,7 @@ class DriverRateController extends Controller
                 return response()->json([
                     'status' => false,
                     'message' => 'can\'t rate unless ride is terminated'
-                ], 500);
+                ], 401);
             }
 
             $user = auth()->user();
