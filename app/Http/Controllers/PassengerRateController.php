@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Helper;
 use Throwable;
 use App\Models\Ride;
 use App\Models\User;
@@ -63,6 +64,36 @@ class PassengerRateController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Rate registered successfully'
+            ], 200);
+            
+        }
+        catch (Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getPRate(Request $request){
+        try{
+            //validate the fields
+            $validateUser = Validator::make($request->all(), 
+                [
+                    'user_id' => 'required|numeric',
+                ]);
+
+                if($validateUser->fails()){
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'validation error',
+                        'errors' => $validateUser->errors()
+                    ], 401);
+                }
+            return response()->json([
+                'status' => true,
+                'rate' => PassengerRate::where('passenger_id', $request->user_id)->avg('rate')
             ], 200);
             
         }

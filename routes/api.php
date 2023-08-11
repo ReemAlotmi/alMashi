@@ -54,6 +54,7 @@ Route::post('reserve-ride', [PassengerRideController::class, 'reserveRide'])->mi
 
 Route::post('rate-driver', [DriverRateController::class, 'rateDriver'])->middleware('auth:sanctum');
 Route::post('rate-passenger', [PassengerRateController::class, 'ratePassenger'])->middleware('auth:sanctum');
+Route::post('get-passenger-rate', [PassengerRateController::class, 'getPRate']);
 
 
 Route::post('passneger-request', [RequestRideController::class, 'passengerInfo'])->middleware('auth:sanctum');

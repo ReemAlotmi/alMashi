@@ -38,10 +38,10 @@ class Helper {
     }
 
     public static function getPassengerRating($passengerId){
-        $rates= PassengerRate::where('passenger_id', $passengerId)->get();
+        $rates= PassengerRate::where('passenger_id', $passengerId)->avg('rate');
 
-        $totalRates= $rates->sum('rate');
-        return $rates->count() > 0 ? $totalRates / $rates->count() : 0;
+        return $rates;
+        
     }
 
     public static function getRating($userId){

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('capacity');
             $table->string('plate');
             $table->string('color');
+            $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
     }
