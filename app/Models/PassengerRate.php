@@ -11,6 +11,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class PassengerRate extends Model
 {
     use HasFactory;
+    protected $fillable = [
+        'ride_id',
+        'passenger_id',
+        'driver_id',
+        'rate',
+        'comment',
+    ];
 
     public function driver(): BelongsTo
     {

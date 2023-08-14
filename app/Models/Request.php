@@ -13,6 +13,14 @@ class Request extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'status',
+        'ride_id',
+        'departure',
+        'destination',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

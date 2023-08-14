@@ -28,6 +28,15 @@ class PassengerRideController extends Controller
             // "destination": "dskjfdsfjk"
             // "ride_id": 2
 
+            //must check if this user has an initiated ride at this moment
+            $ride = Ride::where('user_id', $user->id)->where('status', ['waiting', 'active'])->first();
+            if($ride){
+                return response()->json([
+                    'status' => false,
+                    'message' => "can't reserve a ride bacause you have an active ride"
+                ], 401);
+            }
+
             
             //get all the rides 
             //compare the departure of all of these rides with the user deprature

@@ -19,8 +19,8 @@ class RideController extends Controller
     public function newRide(Request $request){
         try{
             $user = User::where('id',auth()->user()->id)->first();
-            //must check if the user is actually a driver --handled in front-end?--
-            //dd(!($user->is_driver));
+            
+            //must check if the user is actually a driver 
             if(!($user->is_driver)){
                 return response()->json([
                     'status' => false,
@@ -28,7 +28,7 @@ class RideController extends Controller
                 ], 401);
             }
             
-            //must checks if this user has a ride that is active right now
+            //must check if this user has a ride that is waiting/active right now
             $activeRide= Ride::where('user_id', $user->id)->where('status', ['waiting', 'active'])->first();
             if($activeRide){
                 return response()->json([
@@ -37,8 +37,17 @@ class RideController extends Controller
                 ], 401);
             }
 
-            //must validate the input fields
+            //must check if this user reserved a ride right now from the request/passenger ride tables
+            $reservedRide= PassengerRide::where('user_id', $user->id)->where('status', 'active')->first();
+            $requestRide= RequestRide::where('user_id', $user->id)->where('status', 'waiting')->first();
+            if($reservedRide || $requestRide){
+                return response()->json([
+                    'status' => false,
+                    'message' => "You can't initiate a ride because you have reserved a ride!"
+                ], 401); 
+            }
 
+            //must validate the input fields
             $ride= new Ride();
             if(empty($request->time) ){
                 $ride->time = Carbon::now();
@@ -57,9 +66,7 @@ class RideController extends Controller
                     'status' => true,
                     'message' => 'ride created successfully',
                     'ride id' => $ride->id 
-                ], 200);
-
-           
+                ], 200);   
         }
         catch (Throwable $th) {
             return response()->json([
@@ -144,17 +151,33 @@ class RideController extends Controller
             $ride= Ride::find($rqst->ride_id);
             
             if($user->id == $ride->user_id){
-                //edit the price
-                $psngr= PassengerRide::where('id',$rqst->passenger_ride_id)->first();
-                $psngr->cost = $request->cost;
-                $psngr->ride_id = $ride->id;
-                $psngr->save();
+                //maybee this user already got accepted so we check if there's a passenger ride that is created and active with this user id and ride id
+                $psngr = PassengerRide::where('user_id', $rqst->user_id)->where('ride_id', $request->ride_id)->where('status', 'active')->first();
+                if(!$psngr){
+                    //add the ride information to the passenger ride
+                    PassengerRide::create([
+                        'user_id' => $rqst->user_id,
+                        'ride_id' => $request->ride_id,
+                        'cost' => $ride->price,
+                        'departure' => $rqst->departure,
+                        'destination' => $rqst->destination,
+                    ]); //by def the passenger ride status is set to active
+                }
+                //add the ride information to the passenger ride        
+                PassengerRide::create([
+                    'user_id' => $rqst->user_id,
+                    'ride_id' => $ride->id,
+                    'cost' => $request->cost,
+                    'departure' => $rqst->departure,
+                    'destination' => $rqst->destination,
+                ]); //by def the passenger ride status is set to active
+                
+                //changing the request status to accepted
+                $rqst->update(['status' => 'accepted']);
 
-                //editing the price means that the driver has accepted this request
-                $rqst->status = "accepted";
-                $rqst->save();
-
-
+                //changing the ride status to active
+                $ride->update(['status' => 'active']);
+                
                 return response()->json([
                     'status' => true,
                     'message' => "Price changed successfully"
@@ -185,21 +208,25 @@ class RideController extends Controller
             
             
             if($user->id == $ride->user_id){
-                //add the ride information to the passenger ride
-                $psngr= PassengerRide::where('id',$rqst->passenger_ride_id)->first();
-                $psngr->cost = $ride->price;
-                $psngr->ride_id = $ride->id;
-                $psngr->save();
-
-                //editing the price means that the driver has accepted this request
-                $rqst->status = "accepted";
-                $rqst->save();
+                //maybee this user already got accepted so we check if there's a passenger ride that is created and active with this user id and ride id
+                $psngr = PassengerRide::where('user_id', $rqst->user_id)->where('ride_id', $request->ride_id)->where('status', 'active')->first();
+                if(!$psngr){
+                    //add the ride information to the passenger ride
+                    PassengerRide::create([
+                        'user_id' => $rqst->user_id,
+                        'ride_id' => $request->ride_id,
+                        'cost' => $ride->price,
+                        'departure' => $rqst->departure,
+                        'destination' => $rqst->destination,
+                    ]); //by def the passenger ride status is set to active
+                }
+                
+                //changing the request status to accepted
+                $rqst->update(['status' => 'accepted']);
 
                 //changing the ride status to active
-                $ride->status = "active";
-                $ride->save();
-
-
+                $ride->update(['status' => 'active']);
+                
                 return response()->json([
                     'status' => true,
                     'message' => "Ride request accepted successfully"
@@ -257,24 +284,27 @@ class RideController extends Controller
     public function terminate(Request $request){
         try{
             $user = auth()->user();
-            $ride= Ride::where('id', $request->ride_id)->first();
-            $rqst= RequestRide::where('ride_id', $ride->id)->where('status', 'accepted')->first();
-            //should check if this ride driver is the same as the user who wants to terminate this ride?? authorization?
+            $ride = Ride::where('id', $request->ride_id)->first();
+            $rqst = RequestRide::where('ride_id', $ride->id)->where('status', 'accepted')->first();
+            $psnger = PassengerRide::where('user_id', $rqst->user_id)->where('status', 'active')->first();
+            
             if($user->id !== $ride->user_id){
                 return response()->json([
                     'status' => false,
-                    'message' => "Only the driver of this ride can terminate the ride "
+                    'message' => "Only the driver of this ride can terminate the ride"
                 ], 401);
             }
-            $rqst->status = 'terminated';
-            $rqst->save();
-            $ride->status = 'terminated';
-            $ride->save();
+
+            $psnger->update(['status' => 'terminated']);
+            $rqst->update(['status' => 'terminated']);
+            $ride->update(['status' => 'terminated']);
+
             return response()->json([
                 'status' => true,
                 'message' => 'Ride terminated successfully'
             ], 200);
         }
+
         catch (\Throwable $th) {
             return response()->json([
                 'status' => false,

@@ -16,6 +16,14 @@ class Ride extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'status',
+        'price',
+        'time',
+        'user_id',
+        'departure',
+        'destination',
+    ];
 
 
     public function user(): BelongsTo

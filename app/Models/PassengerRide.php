@@ -14,8 +14,14 @@ class PassengerRide extends Model
     use HasFactory;
     protected $table = 'passenger_rides';
 
-    protected $guarded = [
-        
+    
+    protected $fillable = [
+        'user_id',
+        'cost',
+        'ride_id',
+        'status',
+        'departure',
+        'destination',
     ];
 
 

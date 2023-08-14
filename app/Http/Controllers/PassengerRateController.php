@@ -44,13 +44,13 @@ class PassengerRateController extends Controller
                 }
 
             $passengeride = PassengerRide::where('ride_id', $request->ride_id)->where('status', "terminated")->first();
- 
+           // return ($request->ride_id);
             PassengerRate::create([
                 'passenger_id' => $passengeride->user_id,
                 'rate' => $request->rate,
                 'comment' => $request->comment,
                 'ride_id' => $request->ride_id,
-                'driver_id' => $user->id,
+                'driver_id' => $user->id
             ]);
 
             return response()->json([

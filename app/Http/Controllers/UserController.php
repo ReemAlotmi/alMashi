@@ -344,7 +344,7 @@ class UserController extends Controller
     protected function updateMobile($mobile_no, $user){
         $validateUser = Validator::make(
             ['mobile_no' => $mobile_no],
-            ['mobile_no' => 'numeric|digits_between:10,12']
+            ['mobile_no' => 'numeric|digits_between:10,12|unique:users,mobile_no']
         );
 
         if($validateUser->fails()){

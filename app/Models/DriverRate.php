@@ -12,6 +12,14 @@ class DriverRate extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+            'ride_id',
+            'driver_id',
+            'passenger_id',
+            'rate',
+            'comment',       
+    ];
+
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_id');

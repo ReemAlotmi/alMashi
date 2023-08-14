@@ -11,6 +11,12 @@ class Otp extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+            'user_id',
+            'random',
+            'expired_at',      
+];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

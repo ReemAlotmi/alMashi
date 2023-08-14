@@ -23,7 +23,7 @@ class RequestRideController extends Controller
         //     "comments": [] }
         
         try{
-            $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first;
+            $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first();
             $psngr= User::find($rqst->user_id);
             $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->user_id)->get();
 
@@ -54,12 +54,12 @@ class RequestRideController extends Controller
                     'message' => "can't create multiple requests"
                 ], 401);
             }
-
+            
             RequestRide::create([
-            'user_id' => $user->id,
-            'ride_id' => $request->ride_id,
-            'departure' => $request->departure,
-            'destination' => $request->destination
+                'user_id' => $user->id,
+                'ride_id' => $request->ride_id,
+                'departure' => $request->departure,
+                'destination' => $request->destination
             ]);
 
             return response()->json([
@@ -79,8 +79,7 @@ class RequestRideController extends Controller
     public function requestStatus(Request $request){
         try{
             $user = auth()->user();
-            $rqst= RequestRide::where('user_id',$user->id)->where('ride_id', $request->header('ride_id'))->latest();
-
+            $rqst= RequestRide::where('user_id',$user->id)->where('ride_id', $request->header('ride_id'))->latest()->first();
             if($rqst->status == 'rejected'){
                 return response()->json([
                     'status' => true,
@@ -105,13 +104,13 @@ class RequestRideController extends Controller
 
             if($rqst->status == 'accepted'){
                 $ride = Ride::find($request->header('ride_id'));
-                PassengerRide::create([
-                    'user_id' => $user->id,
-                    'ride_id' => $ride->id,
-                    'cost' => $ride->price,
-                    'departure' => $rqst->departure,
-                    'destination' => $rqst->destination,
-                ]);
+                        // PassengerRide::create([
+                        //     'user_id' => $user->id,
+                        //     'ride_id' => $ride->id,
+                        //     'cost' => $ride->price,
+                        //     'departure' => $rqst->departure,
+                        //     'destination' => $rqst->destination,
+                        // ]);
                 
                 return response()->json([
                 'status' => true,
@@ -181,7 +180,8 @@ class RequestRideController extends Controller
             $data=[];
             foreach($rqsts as $rqst){
                 //calculate the destinace here
-                $distance = Helper::clacDistance($ride->departure, $rqst->departure);
+                $distance = Helper::clacDistance($rqst->departure, $ride->departure);
+                //dd($rqst->id, $ride->id);
                 $user= User::find($rqst->user_id);
                 array_push($data, [
                     "name" =>$user->name,

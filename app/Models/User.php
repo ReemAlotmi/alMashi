@@ -25,16 +25,18 @@ class User extends Authenticatable
     protected $table = 'users';
 
     protected $fillable = [
-        'id',	
         'mobile_no',	
         'name',	
         'rating',	
         'porfile_img',
+        'is_driver',
+        'current_location',
+        'mobile_no_verified_at',
     ];
 
     protected $casts = [
         'mobile_no' => 'integer',
-    ];
+    ];              
 
 
     public function car(): HasOne
