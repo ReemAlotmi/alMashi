@@ -23,15 +23,15 @@ class RequestRideController extends Controller
         //     "comments": [] }
         
         try{
-            $rqst= RequestRide::find($request->request_id);
+            $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first;
             $psngr= User::find($rqst->user_id);
-            $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->id)->get();
+            $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->user_id)->get();
 
             return response()->json([
                 'status' => true,
                 'profile_img' => $psngr->profile_img,
                 'name' => $psngr->name,
-                'Rating' => Helper::getPassengerRating($psngr->id),
+                'Rating' => PassengerRate::where('passenger_id', $psngr->id)->avg('rate'),
                 'comments' => $comments 
             ], 200);
             
@@ -47,23 +47,20 @@ class RequestRideController extends Controller
     public function requestRide(Request $request){
         try{
             $user = auth()->user();
-            $ride = PassengerRide::where('user_id',$user->id)->first();
-
             $rqst= RequestRide::where('user_id',$user->id)->where('status', ['waiting', 'accepted'])->get();
             if(count($rqst) != 0){
                 return response()->json([
                     'status' => false,
-                    'message' => 'can\'t create multiple requests'
+                    'message' => "can't create multiple requests"
                 ], 401);
             }
 
-            $rqst= new RequestRide();
-            $rqst->user_id = $user->id;
-            $rqst->ride_id = $request->ride_id;
-            $rqst->departure = $request->departure;
-            $rqst->destination = $request->destination;
-            $rqst->passenger_ride_id = $ride->id;
-            $rqst->save();
+            RequestRide::create([
+            'user_id' => $user->id,
+            'ride_id' => $request->ride_id,
+            'departure' => $request->departure,
+            'destination' => $request->destination
+            ]);
 
             return response()->json([
                 'status' => true,
@@ -79,23 +76,27 @@ class RequestRideController extends Controller
         }
     }
 
-    public function requestStatus(){
+    public function requestStatus(Request $request){
         try{
             $user = auth()->user();
-            $passengeride = PassengerRide::where('user_id',$user->id)->first();
-            $rqst= RequestRide::where('user_id',$user->id)->first();
+            $rqst= RequestRide::where('user_id',$user->id)->where('ride_id', $request->header('ride_id'))->latest();
 
             if($rqst->status == 'rejected'){
-                //it should delete the request because it got rejected
-                $rqst->delete();
                 return response()->json([
                     'status' => true,
                     'message' => 'Request canceled because its rejected'
                 ], 200);
             }
+            if($rqst->status == 'terminated'){
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Request terminated'
+                ], 200);
+            }
             if(($rqst->status == 'waiting') && Carbon::now()->gt($rqst->created_at->addMinutes(1))) {
-                //it should delete the request because its timed out 
-                $rqst->delete();
+                //it should delete the request because its timed out
+                $rqst->status = 'terminated';
+                $rqst->update();
                 return response()->json([
                     'status' => true,
                     'message' => 'Request canceled because its timed out'
@@ -103,8 +104,15 @@ class RequestRideController extends Controller
             }
 
             if($rqst->status == 'accepted'){
-                $passengeride->ride_id = $rqst->ride_id;
-                $passengeride->save();
+                $ride = Ride::find($request->header('ride_id'));
+                PassengerRide::create([
+                    'user_id' => $user->id,
+                    'ride_id' => $ride->id,
+                    'cost' => $ride->price,
+                    'departure' => $rqst->departure,
+                    'destination' => $rqst->destination,
+                ]);
+                
                 return response()->json([
                 'status' => true,
                 'message' => 'Request accepted by driver'
@@ -114,8 +122,7 @@ class RequestRideController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Request is still in waiting status'
-            ], 200);
-            
+            ], 200);    
 
         }
         catch (Throwable $th) {
@@ -129,17 +136,17 @@ class RequestRideController extends Controller
     public function requestCancel(){
         try{
             $user = auth()->user();
-            $passengeride = PassengerRide::where('user_id',$user->id)->first();
-            $rqst= RequestRide::where('user_id',$user->id)->first();
+            $rqst= RequestRide::where('user_id',$user->id)->where('status',['waiting', 'accepted'])->first();
+            $passengeride = PassengerRide::where('user_id',$user->id)->where('ride_id', $rqst->ride_id)->first();
 
             if(!empty($rqst)) {
-                if($rqst->status == 'accepted'){
-                    $passengeride->update(['ride_id' => null, 'cost' => null]);
+                if($rqst->status == 'accepted'){ //means this user has a passenger ride and it should be terminated
+                    $passengeride->update(['status' => 'terminated']);
                 }
-                $rqst->delete();
+                $rqst->update(['status' => 'terminated']); //either ways it will be terminated
                 return response()->json([
                     'status' => true,
-                    'message' => 'Request canceled successfully'
+                    'message' => 'Request canceled successfully' 
                 ], 200);
             }
 

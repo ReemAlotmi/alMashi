@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->references('id')->on('users') ;
             $table->enum('status', array('waiting','rejected','accepted','terminated'))->default('waiting');
-            $table->foreignId('passenger_ride_id')->references('id')->on('passenger_rides');
             $table->foreignId('ride_id')->references('id')->on('rides') ;
             $table->string('departure');
             $table->string('destination');

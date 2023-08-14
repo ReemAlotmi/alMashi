@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\Helper;
 use App\Models\Ride;
+use App\Helpers\Helper;
+use App\Models\RequestRide;
 use Illuminate\Http\Request;
 use App\Models\PassengerRide;
 use Illuminate\Support\Facades\DB;
@@ -16,26 +17,8 @@ class PassengerRideController extends Controller
         //input fields 
         //departure:{(86.8457), (52.417)}
         //destination:{(86.8450), (52.420)}
-
         try{
-            $user = auth()->user();
-
-            //must checks if this user has a ride that is active right now
-            $activeRide= Ride::where('user_id', $user->id)->where('status', ['waiting', 'active'])->first();
-            
-            if($activeRide){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You can\'t reserve a ride because you have an active ride!'
-                ], 401);
-            }
-
-            $passengeRide= new PassengerRide();
-
-            $passengeRide->user_id = $user->id;
-            $passengeRide->departure = $request->departure;
-            $passengeRide->destination = $request->destination;
-            $passengeRide->save();
+            $user = auth()->user();  
 
             // "profile_img": "https://www.gooFYADFQAAAAAdAAAAABAE",
             // "name": "Reem",
@@ -52,12 +35,8 @@ class PassengerRideController extends Controller
             
             $availbleRides= Ride::where('status', ['waiting'])->get();
             $rides=[];
-
-            foreach($availbleRides as $availbleRide){
-                //calculate the distnace here
-                $distance = Helper::clacDistance($availbleRide->departure, $passengeRide->departure);
-                //return($availbleRide->departure ."--". $passengeRide->departure);
-                //return $distance;
+            foreach($availbleRides as $availbleRide){ 
+                $distance = Helper::clacDistance($availbleRide->departure, $request->departure);
                 if($distance <= 10){
                     array_push($rides, [
                         "name" =>$availbleRide->user->name,
@@ -68,8 +47,7 @@ class PassengerRideController extends Controller
                         "destination" =>$availbleRide->destination,
                         "ride_id" => $availbleRide->id
                     ]);
-                }
-                
+                }  
             }
 
             return response()->json([
@@ -86,6 +64,5 @@ class PassengerRideController extends Controller
                 'message' => $th->getMessage()
             ], 500);
         }
-
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Otp;
 use App\Models\Ride;
 use App\Models\User;
 use App\Helpers\Helper;
+use App\Models\DriverRate;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -99,7 +100,6 @@ class UserController extends Controller
             //checks the car information fields
             $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
             $filledFields = [];
-            
             foreach ($fields as $field) {
                 if (filled($field)) {
                     $filledFields[] = $field;
@@ -180,7 +180,7 @@ class UserController extends Controller
                     array_push($rides, [
                         "name" =>$availbleRide->user->name,
                         "profile_img" =>$availbleRide->user->profile_img,
-                        "rating" => Helper::getDriverRating($availbleRide->user->id),
+                        "rating" => DriverRate::where('driver_id',$availbleRide->user->id)->avg('rate'),
                         "price" => $availbleRide->price,
                         "distance" => $distance,
                         "destination" =>$availbleRide->destination
@@ -208,7 +208,6 @@ class UserController extends Controller
         try{
             $user= auth()->user();
             $user->tokens()->delete();
-            //dd();
             //PersonalAccessToken::where('tokenable_id', $user->id)->delete();
 
             return response()->json([
@@ -224,23 +223,10 @@ class UserController extends Controller
         }
     }
 
-    public function replica(Request $request){
-        try{
-            $user = auth()->user();
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
     public function createUser(Request $request){
         try {
             $request->merge(['is_driver' => $request->input('is_driver') ?? false]);
             
-            //Validated
             $validateUser = Validator::make($request->all(), 
             [
                 'name' => 'required',
@@ -258,28 +244,16 @@ class UserController extends Controller
                     'errors' => $validateUser->errors()
                 ], 401);
             }
-            DB::beginTransaction();
-            
-                $user = new User();
-                $user->name = $request->name;
-                $user->mobile_no = $request->mobile_no;
-                $user->is_driver = $request->is_driver;
-                $user->save();  
 
+            DB::beginTransaction();
+            $user = new User();
+            $user->name = $request->name;
+            $user->mobile_no = $request->mobile_no;
+            $user->is_driver = $request->is_driver;
+            $user->save();  
 
             if($request->is_driver){
                 $carClassification= CarClassification::where('classification',$request->classification)->first();
-                // $car = new Car();
-                // $car->user_id = $user->id ;
-                // $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
-                // $car->type = $request->type ;
-                // $car->capacity = $request->capacity ;
-                // $car->color = $request->color ;
-                // $car->plate = $request->plate;
-
-                // $car->save();
-
-
                 Car::create([
                         'user_id' => $user->id,
                         'classification_id' => $carClassification->id, //the car calssifications table get the id of the classification that received from the user,
@@ -288,19 +262,15 @@ class UserController extends Controller
                         'capacity' => $request->capacity,
                         'color' => $request->color,    
                     ]);
-
             }
-            
 
             $otp = new Otp();
-            $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
+            $otp->random = random_int (1111,9999); 
             $otp->expired_at = Carbon::now()->addMinutes(10);
             $otp->user_id = $user->id;
             $otp->save();
-
             
             DB::commit();
-
 
             return response()->json([
                 'status' => true,
@@ -319,9 +289,7 @@ class UserController extends Controller
     }
     
     public function signIn(Request $request){
-
         try {
-            //Validated
             $validateUser = Validator::make($request->all(), 
             [
                 'mobile_no' => 'required|numeric|digits_between:10,12'
@@ -345,7 +313,7 @@ class UserController extends Controller
                 ], 401);
             }
             $otp = Otp::where('user_id',$user->id)->first();
-            $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
+            $otp->random = random_int (1111,9999); 
             $otp->expired_at = Carbon::now()->addMinutes(10);
             $otp->update();
 
@@ -367,136 +335,47 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(){ 
+   
+    public function index(){ //returns all users
         $users = User::all();
         return response()->json($users);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //dd($request->all());
-
-        $user= New User();
-
-        $user->id = $request->id;
-        $user->mobile_no = $request->mobile_no;
-        $user->name = $request->name;
-        $user->rating = $request->rating;
-        $user->profile_img = $request->profile_img;
-        $user->is_driver = $request->is_driver;
-        $user->current_location = $request->current_location;
-
-        $user->save();
-
-        return response()->json($user);
-
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $users = User::where('id',$id)->get();
-
-        return response()->json($users);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $user = User::where('id', $id)->first();
-       //$users=["message"=>" done", "data"=>$user->all()];
-
-        //dd($request->mobile_no);
-
-        
-
-        //$user->id = $request->id;
-        $user->mobile_no = $request->mobile_no;
-        // $user->name = $request->name;
-        // $user->rating = $request->rating;
-        // $user->porfile_img = $request->porfile_img;
-
-
-        // User::where('id', $id)
-        //       ->update(['mobile_no' => $request->mobile_no]);
-
-        // User::where('id', $id)
-        // ->update($request->all());//
-        
-        $user->save();
-
-        return response()->json(["message"=>" done", "data"=>$user->all()]);
-
-        
-
-
-        
-        
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        User::where('id', $id)
-        ->delete();
-    }
-
     protected function updateMobile($mobile_no, $user){
-        //Validated
-        
         $validateUser = Validator::make(
             ['mobile_no' => $mobile_no],
-            ['mobile_no' => 'numeric|digits_between:10,12']);
-        //dd($validateUser->fails());
+            ['mobile_no' => 'numeric|digits_between:10,12']
+        );
 
-            if($validateUser->fails()){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
-            
-            $otp = Otp::where("user_id", $user->id)->first();
-            $otp->random = random_int (1111,9999); //Str::random(4, '0123456789');// generate_otp() is a custom function to generate the OTP.
-            $otp->expired_at = Carbon::now()->addMinutes(10);
-            $otp->update();
-
-            // $user->update();
-
+        if($validateUser->fails()){
             return response()->json([
-                'status' => true,
-                'message' => 'you should verify the new mobile_no or it wont be updated',
-                'otp' => $otp->random
-            ], 200);
-        
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
+            
+        $otp = Otp::where("user_id", $user->id)->first();
+        $otp->random = random_int (1111,9999); 
+        $otp->expired_at = Carbon::now()->addMinutes(10);
+        $otp->update();
+
+        return response()->json([
+            'status' => true,
+            'otp' => $otp->random
+        ], 200);
+    
     }
 
     protected function addCar($request, $user){
         //checks the car information fields
         $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
-        
         $filledFields = [];
-        
         foreach ($fields as $field) {
             if (filled($field)) {
                 $filledFields[] = $field;
-            }
-            
-        }  
-        //dd(count($filledFields) > 0 && count($filledFields) < count($fields));
+            }   
+        } 
 
         if (count($filledFields) > 0 && count($filledFields) < count($fields)) {// At least one field is filled, but not all of them
             // Handle the error or show appropriate response
@@ -505,9 +384,10 @@ class UserController extends Controller
                 'plate' => 'required',
                 'classification' => 'required', 
                 'type' => 'required', 
-                'capacity' => 'sometimes|required|numeric', 
+                'capacity' => 'required|numeric', 
                 'color' => 'required'
             ]);
+
             if($validateUser->fails()){
 
                 return response()->json([
@@ -517,7 +397,7 @@ class UserController extends Controller
                 ], 401);
             }
         }
-        //otherwise all the fields is filled
+        //otherwise all the fields are filled
         //add new
         $carClassification= CarClassification::where('classification',$request->classification)->first();
         $car = new Car();
@@ -529,6 +409,7 @@ class UserController extends Controller
         $car->plate = $request->plate;
         $car->save();
         $user->is_driver = true;
+
         return response()->json([
             'status' => true
         ], 200);
@@ -537,14 +418,11 @@ class UserController extends Controller
     protected function updateCar($request, $user){
         //checks the car information fields
         $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
-
         $filledFields = [];
-
         foreach ($fields as $field) {
             if (filled($field)) {
                 $filledFields[] = $field;
             }
-        
         }
 
         if (count($filledFields) > 0 && count($filledFields) < count($fields)) {// At least one field is filled, but not all of them
@@ -570,10 +448,9 @@ class UserController extends Controller
             $car->delete();
             $user->is_driver= false;
             $user->save();
+            
             return response()->json([
                 'status' => true
-                //'message' => 'User updated successfully',
-                //'user' => $user
             ], 200);
             
 

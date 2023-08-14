@@ -16,13 +16,11 @@ return new class extends Migration
             $table->foreignId('user_id')->references('id')->on('users');
             $table->double('cost');
             $table->foreignId('ride_id')->references('id')->on('rides');
+            $table->enum('status', array('active','terminated'))->default('active');
             $table->string('departure');
             $table->string('destination');
             $table->timestamps();
 
-
-            $table->double('cost')->nullable()->change();
-            $table->unsignedBigInteger('ride_id')->nullable()->change();
         });
     }
 

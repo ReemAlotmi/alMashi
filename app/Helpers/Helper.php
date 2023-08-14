@@ -31,10 +31,9 @@ class Helper {
 
 
     public static function getDriverRating($driverId){
-        $rates= DriverRate::where('driver_id', $driverId)->get();
-
-        $totalRates= $rates->sum('rate');
-        return $rates->count() > 0 ? $totalRates / $rates->count() : 0;
+        $rates= DriverRate::where('driver_id', $driverId)->avg('rate');
+        
+        return $rates;
     }
 
     public static function getPassengerRating($passengerId){

@@ -14,7 +14,7 @@ class DriverRateController extends Controller
 {
     public function rateDriver(Request $request){
         try{
-
+            $user = auth()->user();
             /////the ride must be set to terminated so they can rate
             $ride= Ride::find($request->ride_id);
             if($ride->status !== "terminated"){
@@ -25,46 +25,28 @@ class DriverRateController extends Controller
             }
             //validate the fields
             $validateUser = Validator::make($request->all(), 
-                [
-                    'rate' => 'required|numeric|lte:5',
-                    'ride_id' => 'required'
-                ]);
+            [
+                'rate' => 'required|numeric|lte:5',
+                'ride_id' => 'required',
+                'comment' => 'nullable'
+            ]);
 
-                if($validateUser->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'validation error',
-                        'errors' => $validateUser->errors()
-                    ], 401);
-                }
-
-            $ride= Ride::find($request->ride_id);
-            if($ride->status !== "terminated"){
+            if($validateUser->fails()){
                 return response()->json([
                     'status' => false,
-                    'message' => 'can\'t rate unless ride is terminated'
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
                 ], 401);
             }
 
-            $user = auth()->user();
-            $ride = Ride::where('id', $request->ride_id)->first();
-
-            $rating = new DriverRate();
-            $rating->passenger_id = $user->id;
-            $rating->rate = $request->rate;
-            $rating->comment = $request->comment;
-            $rating->ride_id = $request->ride_id;
-            $rating->driver_id = $ride ->user_id;
-            $rating->save();
-
-            //code for calculating the total rates for this driver
-            // $rates= DriverRate::where('driver_id', $ride->user_id)->get();
-            // $totalRates= $rates->sum('rate');
-            
-            // $thisDriver= User::find($ride->user_id);
-            // $thisDriver->rating = $rates->count() > 0 ? $totalRates / $rates->count() : 0;
-            // $thisDriver->save();
-
+             
+            DriverRate::create([
+                'passenger_id' => $user->id,
+                'rate' => $request->rate,
+                'comment' => $request->comment,
+                'ride_id' => $request->ride_id,
+                'driver_id' => $ride->user_id,
+            ]);
 
             return response()->json([
                 'status' => true,
