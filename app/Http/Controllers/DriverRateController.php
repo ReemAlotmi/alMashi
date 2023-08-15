@@ -14,16 +14,6 @@ class DriverRateController extends Controller
 {
     public function rateDriver(Request $request){
         try{
-            $user = auth()->user();
-            /////the ride must be set to terminated so they can rate
-            $ride= Ride::find($request->ride_id);
-            if($ride->status !== "terminated"){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'can\'t rate unless ride is terminated'
-                ], 401);
-            }
-            //validate the fields
             $validateUser = Validator::make($request->all(), 
             [
                 'rate' => 'required|numeric|lte:5',
@@ -39,14 +29,36 @@ class DriverRateController extends Controller
                 ], 401);
             }
 
-             
-            DriverRate::create([
+            $user = auth()->user();
+            /////the ride must be set to terminated so they can rate
+            $ride= Ride::find($request->ride_id);
+            if($ride->status !== "terminated"){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'can\'t rate unless ride is terminated'
+                ], 401);
+            }
+
+            //make sure that the user hasn't already rated this ride's passenger 
+            $rated = DriverRate::where('passenger_id', $user->id)->where('ride_id', $request->ride_id)->first();
+            if(!$rated){
+                DriverRate::create([
+                    'passenger_id' => $user->id,
+                    'rate' => $request->rate,
+                    'comment' => $request->comment,
+                    'ride_id' => $request->ride_id,
+                    'driver_id' => $ride->user_id,
+                ]);   
+            }
+
+            $rated->update([
                 'passenger_id' => $user->id,
                 'rate' => $request->rate,
                 'comment' => $request->comment,
                 'ride_id' => $request->ride_id,
                 'driver_id' => $ride->user_id,
             ]);
+
 
             return response()->json([
                 'status' => true,

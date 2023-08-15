@@ -87,11 +87,10 @@ class OtpController extends Controller
             
             if ($otp->random == (int)$request->random) {
                 if(Carbon::now()->lt($otp->expired_at)){
-                    
-                    $user->mobile_no_verified_at = Carbon::now();
-                    $user->mobile_no = $request->mobile_no;
-                    $user->update();
-
+                    $user->update([
+                        'mobile_no_verified_at' => Carbon::now(),
+                        'mobile_no' => $request->mobile_no
+                    ]);
                     return response()->json([
                         'status' => true,
                         'message' => 'mobile number updated Successfully'

@@ -19,33 +19,46 @@ class PassengerRateController extends Controller
     //ratePassenger
     public function ratePassenger(Request $request){
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'rate' => 'required|numeric|lte:5',
+                'ride_id' => 'required',
+                'comment' => 'nullable'
+            ]);
+
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+
             $user = auth()->user();//the driver
-            /////the ride must be set to terminated so they can rate
+            //the ride must be set to terminated so they can rate
             $ride= Ride::find($request->ride_id);
             if($ride->status !== "terminated"){
                 return response()->json([
                     'status' => false,
-                    'message' => 'can\'t rate unless ride is terminated'
+                    'message' => "can't rate unless ride is terminated"
                 ], 401);
             }
-            $validateUser = Validator::make($request->all(), 
-                [
-                    'rate' => 'required|numeric|lte:5',
-                    'ride_id' => 'required',
-                    'comment' => 'nullable'
+            
+            $passengeride = PassengerRide::where('ride_id', $request->ride_id)->where('status', "terminated")->latest()->first();
+            
+            //make sure that the user hasn't already rated this ride's passenger 
+            $rated = PassengerRate::where('driver_id', $user->id)->where('ride_id', $request->ride_id)->first();
+            if(empty($rated)){
+                PassengerRate::create([
+                    'passenger_id' => $passengeride->user_id,
+                    'rate' => $request->rate,
+                    'comment' => $request->comment,
+                    'ride_id' => $request->ride_id,
+                    'driver_id' => $user->id
                 ]);
-
-                if($validateUser->fails()){
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'validation error',
-                        'errors' => $validateUser->errors()
-                    ], 401);
-                }
-
-            $passengeride = PassengerRide::where('ride_id', $request->ride_id)->where('status', "terminated")->first();
-           // return ($request->ride_id);
-            PassengerRate::create([
+            }
+            
+            $rated->update([
                 'passenger_id' => $passengeride->user_id,
                 'rate' => $request->rate,
                 'comment' => $request->comment,
@@ -67,52 +80,34 @@ class PassengerRateController extends Controller
         }
     }
     public function getPRate(Request $request){
-        try{
-            $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first;
-            $psngr= User::find($rqst->user_id);
-            $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->user_id)->get();
+                                // try{
+                                //     //validate the fields
+                                //     $validateUser = Validator::make($request->all(), 
+                                //         [
+                                //             'user_id' => 'required|numeric',
+                                //         ]);
 
-            return response()->json([
-                'status' => true,
-                'profile_img' => $psngr->profile_img,
-                'name' => $psngr->name,
-                'Rating' => PassengerRate::where('passenger_id', $psngr->id)->avg('rate'),
-                'comments' => $comments 
-            ], 200);
-            
+                                //         if($validateUser->fails()){
+                                //             return response()->json([
+                                //                 'status' => false,
+                                //                 'message' => 'validation error',
+                                //                 'errors' => $validateUser->errors()
+                                //             ], 401);
+                                //         }
 
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-                        // try{
-                        //     //validate the fields
-                        //     $validateUser = Validator::make($request->all(), 
-                        //         [
-                        //             'user_id' => 'required|numeric',
-                        //         ]);
-
-                        //         if($validateUser->fails()){
-                        //             return response()->json([
-                        //                 'status' => false,
-                        //                 'message' => 'validation error',
-                        //                 'errors' => $validateUser->errors()
-                        //             ], 401);
-                        //         }
-                        //     return response()->json([
-                        //         'status' => true,
-                        //         'rate' => PassengerRate::where('passenger_id', $request->user_id)->avg('rate')
-                        //     ], 200);
-                            
-                        // }
-                        // catch (Throwable $th) {
-                        //     return response()->json([
-                        //         'status' => false,
-                        //         'message' => $th->getMessage()
-                        //     ], 500);
-                        // }
+                                //     $comments = PassengerRate::where('passenger_id', $request->user_id)->pluck('comment');
+                                //     return response()->json([
+                                //         'status' => true,
+                                //         'rate' => PassengerRate::where('passenger_id', $request->user_id)->avg('rate'),
+                                //         'comments' => $comments
+                                //     ], 200);   
+                                // }
+                                // catch (Throwable $th) {
+                                //     return response()->json([
+                                //         'status' => false,
+                                //         'message' => $th->getMessage()
+                                //     ], 500);
+                                // }
+        
     }
 }

@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use App\Models\CarClassification;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -21,208 +22,6 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-
-
-    public function viewProfile(Request $request){
-        //$token=;
-        //User::where('id', $request->user_id)->first();
-        //return $user;
-        //auth()->user();
-        // $token = PersonalAccessToken::where('token', $request->header('token'))->first();
-        // return  $request->header('token');
-        // $user = $token->tokenable;
-        try{
-            $user = auth()->user();
-            if($user->is_driver){
-                $car = Car::where('user_id', $user->id)->first();
-                $carClassification= CarClassification::where('id',$car->classification_id)->first();
-
-                return response()->json(
-                [
-                    'status' => true,
-                    'name' => $user->name, 
-                    'profile_img' => $user->profile_img,
-                    'rating' => Helper::getRating($user->id),  
-                    'mobile_no' => $user->mobile_no,   
-                    'plate' => $car->plate,   
-                    'classification' => $carClassification->classification,
-                    'capacity' => $car->capacity,   
-                    'type' => $car->type,   
-                    'color' => $car->color,   
-                    'is_driver' => $user->is_driver,   
-                ], 200);
-            }
-            return response()->json(
-                [
-                    'status' => true,
-                    'name' => $user->name, 
-                    'profile_img' => $user->profile_img,
-                    'rating' => Helper::getRating($user->id),   
-                    'mobile_no' => $user->mobile_no,   
-                    'plate' => "",   
-                    'classification' => "",   
-                    'capacity' => "",   
-                    'type' => "",   
-                    'color' => "",   
-                    'is_driver' => $user->is_driver,   
-                ], 200);  
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
-    public function editProfile(Request $request){
-        try{
-            //$user = auth()->user();
-            $user = User::where('id', auth()->user()->id)->first();
-            
-            $validateUser = Validator::make($request->all(), 
-            [
-                'name' => 'required',
-                'profile_img' => 'required',
-            ]);
-
-            if($validateUser->fails()){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
-
-            $user->name = $request->name;
-            $user->profile_img = $request->profile_img;
-
-            //checks the car information fields
-            $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
-            $filledFields = [];
-            foreach ($fields as $field) {
-                if (filled($field)) {
-                    $filledFields[] = $field;
-                }
-                
-            }
-
-            if($user->is_driver){ //this user is driver
-                $response = $this->updateCar($request, $user);
-                if ($response->getStatusCode() == 401) {
-                    return json_decode($response->getContent());
-             }
-            }
-
-            if(!($user->is_driver) && !(count($filledFields) === 0)){//if the user is not a driver but wants to be one by adding his car info
-                $response = $this->addCar($request, $user);
-                if ($response->getStatusCode() == 401) {
-                    return json_decode($response->getContent());
-             }
-            }
-            
-            if($request->mobile_no != $user->mobile_no ){ //if the user wants to change his mobile he must verify it first or it wont be changed
-                $response = $this->updateMobile($request->mobile_no, $user);
-                    if ($response->getStatusCode() == 401) {
-                        return json_decode($response->getContent());
-                    } elseif($response->getStatusCode() == 200){
-                        $content = json_decode($response->getContent(), true);
-                        // Access the desired key from the content
-                        $otp = $content['otp'];
-                           
-                          
-                 }
-            }  
-
-            $user->save();
-            return response()->json([
-                'status' => true,
-                'message' => 'User updated successfully',
-                'user' => $user,
-                'otp' => $otp ?? null 
-            ], 200);
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
-    public function addLocation(Request $request){
-        try{
-            $user = User::where('id', auth()->user()->id)->first();
-            $user->current_location = $request->current_location;
-            $user->save();
-
-
-
-            // "profile_img": "https://www.gooFYADFQAAAAAdAAAAABAE",
-            // "name": "Reem",
-            // "rating": 3,
-            // "price": 10,
-            // "distance": " "     
-            // "destination": "dskjfdsfjk"
-
-            
-            //get all the rides 
-            //compare the departure of all of these rides with the user deprature
-            //get only the rides that is distant by 10km or less 
-            
-            $availbleRides= Ride::where('status', ['waiting'])->get();
-            $rides=[];
-
-            foreach($availbleRides as $availbleRide){
-                //calculate the distnace here
-                $distance = Helper::clacDistance($availbleRide->departure, $request->current_location);
-                if($distance <= 10){
-                    array_push($rides, [
-                        "name" =>$availbleRide->user->name,
-                        "profile_img" =>$availbleRide->user->profile_img,
-                        "rating" => DriverRate::where('driver_id',$availbleRide->user->id)->avg('rate'),
-                        "price" => $availbleRide->price,
-                        "distance" => $distance,
-                        "destination" =>$availbleRide->destination
-                    ]);
-                }
-                
-            }
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Location added successfully',
-                'Close rides' => $rides
-            ], 200);
-
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
-    public function signOut(){
-        try{
-            $user= auth()->user();
-            $user->tokens()->delete();
-            //PersonalAccessToken::where('tokenable_id', $user->id)->delete();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'user signed out'
-            ], 200);
-        }
-        catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
     public function createUser(Request $request){
         try {
             $request->merge(['is_driver' => $request->input('is_driver') ?? false]);
@@ -335,7 +134,196 @@ class UserController extends Controller
         }
     }
 
-   
+    public function viewProfile(Request $request){
+        try{
+            $user = auth()->user();
+            if($user->is_driver){
+                $car = Car::where('user_id', $user->id)->first();
+                $carClassification= CarClassification::where('id',$car->classification_id)->first();
+
+                return response()->json(
+                [
+                    'status' => true,
+                    'user' => new UserResource($user),
+                            // 'name' => $user->name, 
+                            // 'profile_img' => $user->profile_img,
+                            // 'rating' => Helper::getRating($user->id),  
+                            // 'mobile_no' => $user->mobile_no,   
+                            // 'is_driver' => $user->is_driver,   
+                                // 'plate' => $car->plate,   
+                                // 'classification' => $carClassification->classification,
+                                // 'capacity' => $car->capacity,   
+                                // 'type' => $car->type,   
+                                // 'color' => $car->color,   
+                ], 200);
+            }
+            return response()->json(
+                [
+                    'status' => true,
+                    'user' => new UserResource($user),
+                            // 'name' => $user->name, 
+                            // 'profile_img' => $user->profile_img,
+                            // 'rating' => Helper::getRating($user->id),   
+                            // 'mobile_no' => $user->mobile_no,   
+                            // 'is_driver' => $user->is_driver,   
+                    'plate' => "",   
+                    'classification' => "",   
+                    'capacity' => "",   
+                    'type' => "",   
+                    'color' => "",   
+                ], 200);  
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function editProfile(Request $request){
+        try{ 
+            $validateUser = Validator::make($request->all(), 
+            [
+                'name' => 'required',
+                'profile_img' => 'required',
+            ]);
+
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+
+            $user = User::where('id', auth()->user()->id)->first();
+            $user->name = $request->name;
+            $user->profile_img = $request->profile_img;
+
+            //checks the car information fields
+            $fields = [$request->plate, $request->classification, $request->capacity, $request->type, $request->color];
+            $filledFields = [];
+            foreach ($fields as $field) {
+                if (filled($field)) {
+                    $filledFields[] = $field;
+                } 
+            }
+
+            if($user->is_driver){ //this user is driver
+                $response = $this->updateCar($request, $user);
+                if ($response->getStatusCode() == 401) {
+                    return json_decode($response->getContent());
+             }
+            }
+
+            if(!($user->is_driver) && !(count($filledFields) === 0)){//if the user is not a driver but wants to be one by adding his car info
+                $response = $this->addCar($request, $user);
+                if ($response->getStatusCode() == 401) {
+                    return json_decode($response->getContent());
+             }
+            }
+            
+            if($request->mobile_no != $user->mobile_no ){ //if the user wants to change his mobile he must verify it first or it wont be changed
+                $response = $this->updateMobile($request->mobile_no, $user);
+                    if ($response->getStatusCode() == 401) {
+                        return json_decode($response->getContent());
+                    } elseif($response->getStatusCode() == 200){
+                        $content = json_decode($response->getContent(), true);
+                        // Access the desired key from the content
+                        $otp = $content['otp'];                 
+                 }
+            }  
+
+            $user->save();
+            return response()->json([
+                'status' => true,
+                'message' => 'User updated successfully',
+                'user' => $user,
+                'otp' => $otp ?? null 
+            ], 200);
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addLocation(Request $request){
+        try{
+            $user = User::where('id', auth()->user()->id)->first();
+            $user->current_location = $request->current_location;
+            $user->save();
+
+
+
+            // "profile_img": "https://www.gooFYADFQAAAAAdAAAAABAE",
+            // "name": "Reem",
+            // "rating": 3,
+            // "price": 10,
+            // "distance": " "     
+            // "destination": "dskjfdsfjk"
+
+            
+            //get all the rides 
+            //compare the departure of all of these rides with the user deprature
+            //get only the rides that is distant by 10km or less 
+            
+            $availbleRides= Ride::where('status', ['waiting'])->get();
+            $rides=[];
+
+            foreach($availbleRides as $availbleRide){
+                //calculate the distnace here
+                $distance = Helper::clacDistance($availbleRide->departure, $request->current_location);
+                if($distance <= 10){
+                    array_push($rides, [
+                        "name" =>$availbleRide->user->name,
+                        "profile_img" =>$availbleRide->user->profile_img,
+                        "rating" => DriverRate::where('driver_id',$availbleRide->user->id)->avg('rate'),
+                        "price" => $availbleRide->price,
+                        "distance" => $distance,
+                        "destination" =>$availbleRide->destination
+                    ]);
+                }
+                
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Location added successfully',
+                'Close rides' => $rides
+            ], 200);
+
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function signOut(){
+        try{
+            $user= auth()->user();
+            $user->tokens()->delete();
+            //PersonalAccessToken::where('tokenable_id', $user->id)->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'user signed out'
+            ], 200);
+        }
+        catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
+
     public function index(){ //returns all users
         $users = User::all();
         return response()->json($users);
