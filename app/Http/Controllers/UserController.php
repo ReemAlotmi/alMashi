@@ -134,15 +134,13 @@ class UserController extends Controller
         }
     }
 
-    public function viewProfile(Request $request){
+    public function viewProfile(){
         try{
             $user = auth()->user();
-            
             return response()->json(
                 [
                     'status' => true,
-                    'user' => new UserResource($user),
-                       
+                    'user' => new UserResource($user),     
                 ], 200);  
         }
         catch (\Throwable $th) {
@@ -225,6 +223,18 @@ class UserController extends Controller
 
     public function addLocation(Request $request){
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'current_location' => 'required'   
+            ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = User::where('id', auth()->user()->id)->first();
             $user->current_location = $request->current_location;
             $user->save();

@@ -13,10 +13,25 @@ use App\Models\PassengerRide;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class RideController extends Controller
 {
     public function newRide(Request $request){
+        $validateUser = Validator::make($request->all(), 
+                [
+                    'departure' => 'required',
+                    'desttination' => 'required',
+                    'price' => 'required|numeric',
+                    'time' => 'date_format:H:i:s'
+                ]);
+        if($validateUser->fails()){
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validateUser->errors()
+            ], 401);
+        }
         try{
             $user = User::where('id',auth()->user()->id)->first();
             
@@ -49,7 +64,7 @@ class RideController extends Controller
 
             //must validate the input fields
             $ride= new Ride();
-            if(empty($request->time) ){
+            if(empty($request->time)){
                 $ride->time = Carbon::now();
             }
             else{
@@ -122,7 +137,21 @@ class RideController extends Controller
     }
 
     public function driverInfo(Request $request){
+        
+        
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'ride_id' => 'required|numeric',    
+            ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $ride= Ride::where('id', $request->ride_id)->first();
             $user = User::where('id', $ride->user_id)->first();
             $comments = DriverRate::select('comment')->where('driver_id', $request->user_id)->get();
@@ -146,6 +175,18 @@ class RideController extends Controller
 
     public function editPrice(Request $request){
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'ride_id' => 'required|numeric',    
+            ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();
             $rqst= RequestRide::find($request->request_id);
             $ride= Ride::find($rqst->ride_id);
@@ -199,9 +240,20 @@ class RideController extends Controller
     }
 
     public function acceptRide(Request $request){
-        // ride_id:
-        // request_id:
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'ride_id' => 'required|numeric',  
+                'request_id' => 'required|numeric',    
+            ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();
             $rqst= RequestRide::find($request->request_id);
             $ride= Ride::find($request->ride_id);
@@ -248,14 +300,6 @@ class RideController extends Controller
     }
 
     public function activateRide(){
-
-        // "departure": " ",
-        // "destination": " ",
-        // "NoPassengers": " "
-        //user name
-        //img
-        //rating
-
         try{
             $user = auth()->user();
             $ride= Ride::where('user_id', $user->id)->where('status', 'active')->first();
@@ -283,6 +327,18 @@ class RideController extends Controller
 
     public function terminate(Request $request){
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'ride_id' => 'required|numeric'  
+            ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();
             $ride = Ride::where('id', $request->ride_id)->first();
             $rqst = RequestRide::where('ride_id', $ride->id)->where('status', 'accepted')->first();

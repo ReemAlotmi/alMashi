@@ -13,6 +13,7 @@ use App\Models\PassengerRide;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class RequestRideController extends Controller
 {
@@ -21,8 +22,20 @@ class RequestRideController extends Controller
         //     "name": "",
         //     "rate" : " "
         //     "comments": [] }
-        
         try{
+            $validateUser = Validator::make($request->all(), 
+                [
+                    'request_id' => 'required|numeric',    
+                ]);
+    
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
+            
             $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first();
             $psngr= User::find($rqst->user_id);
             $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->user_id)->get();
@@ -46,6 +59,19 @@ class RequestRideController extends Controller
     }
     public function requestRide(Request $request){
         try{
+            $validateUser = Validator::make($request->all(), 
+            [
+                'departure' => 'required',
+                'desttination' => 'required',
+                'ride_id' => 'required|numeric'  
+            ]);
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();
             $rqst= RequestRide::where('user_id',$user->id)->where('status', ['waiting', 'accepted'])->get();
             if(count($rqst) != 0){
@@ -54,14 +80,12 @@ class RequestRideController extends Controller
                     'message' => "can't create multiple requests"
                 ], 401);
             }
-            
             RequestRide::create([
                 'user_id' => $user->id,
                 'ride_id' => $request->ride_id,
                 'departure' => $request->departure,
                 'destination' => $request->destination
             ]);
-
             return response()->json([
                 'status' => true,
                 'message' => 'Request sent successfully'
@@ -77,7 +101,19 @@ class RequestRideController extends Controller
     }
 
     public function requestStatus(Request $request){
+        
         try{
+            $validateUser = Validator::make($request->header(), 
+            [
+                'ride_id' => 'required|numeric',    
+            ]);
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();
             $rqst= RequestRide::where('user_id',$user->id)->where('ride_id', $request->header('ride_id'))->latest()->first();
             if($rqst->status == 'rejected'){
@@ -102,16 +138,7 @@ class RequestRideController extends Controller
                 ], 200);
             }
 
-            if($rqst->status == 'accepted'){
-                $ride = Ride::find($request->header('ride_id'));
-                        // PassengerRide::create([
-                        //     'user_id' => $user->id,
-                        //     'ride_id' => $ride->id,
-                        //     'cost' => $ride->price,
-                        //     'departure' => $rqst->departure,
-                        //     'destination' => $rqst->destination,
-                        // ]);
-                
+            if($rqst->status == 'accepted'){      
                 return response()->json([
                 'status' => true,
                 'message' => 'Request accepted by driver'

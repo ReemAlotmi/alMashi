@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\PassengerRide;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 
 class PassengerRideController extends Controller
@@ -18,16 +19,20 @@ class PassengerRideController extends Controller
         //departure:{(86.8457), (52.417)}
         //destination:{(86.8450), (52.420)}
         try{
+            $validateUser = Validator::make($request->all(), 
+                [
+                    'departure' => 'required',
+                    'desttination' => 'required'
+                ]);
+            if($validateUser->fails()){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validateUser->errors()
+                ], 401);
+            }
             $user = auth()->user();  
-
-            // "profile_img": "https://www.gooFYADFQAAAAAdAAAAABAE",
-            // "name": "Reem",
-            // "rating": 3,
-            // "price": 10,
-            // "distance": " "     
-            // "destination": "dskjfdsfjk"
-            // "ride_id": 2
-
+            
             //must check if this user has an initiated ride at this moment
             $ride = Ride::where('user_id', $user->id)->where('status', ['waiting', 'active'])->first();
             if($ride){

@@ -59,7 +59,7 @@ Route::post('get-passenger-rate', [PassengerRateController::class, 'getPRate']);
 
 Route::post('passneger-request', [RequestRideController::class, 'passengerInfo'])->middleware('auth:sanctum');
 Route::get('my-orders-driver', [RequestRideController::class, 'myOrdersDriver'])->middleware('auth:sanctum');
-Route::post('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
+Route::get('cancel-request', [RequestRideController::class, 'requestCancel'])->middleware('auth:sanctum');
 Route::post('request-ride', [RequestRideController::class, 'requestRide'])->middleware('auth:sanctum');
 Route::get('check-request-status', [RequestRideController::class, 'requestStatus'])->middleware('auth:sanctum');
 

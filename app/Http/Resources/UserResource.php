@@ -18,10 +18,6 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // if($this->is_driver){
-        //     $carClassification= CarClassification::where('id',$this->car->classification_id)->select('classification')->first();
-        //     //dd($carClassification);
-        // }
         $response = [
             'name' => $this->name, 
             'profile_img' => $this->profile_img,
@@ -31,7 +27,6 @@ class UserResource extends JsonResource
             'color' => $this->car->color?? null,
             'plate' => $this->car->plate?? null,   
             'classification' => $this->is_driver ? CarClassification::where('id', $this->car->classification_id)->value('classification') : null,
-            //'classification' => $carClassification->classification?? null,
             'capacity' => $this->car->capacity?? null,   
             'type' => $this->car->type?? null,   
         ];

@@ -79,35 +79,5 @@ class PassengerRateController extends Controller
             ], 500);
         }
     }
-    public function getPRate(Request $request){
-                                // try{
-                                //     //validate the fields
-                                //     $validateUser = Validator::make($request->all(), 
-                                //         [
-                                //             'user_id' => 'required|numeric',
-                                //         ]);
-
-                                //         if($validateUser->fails()){
-                                //             return response()->json([
-                                //                 'status' => false,
-                                //                 'message' => 'validation error',
-                                //                 'errors' => $validateUser->errors()
-                                //             ], 401);
-                                //         }
-
-                                //     $comments = PassengerRate::where('passenger_id', $request->user_id)->pluck('comment');
-                                //     return response()->json([
-                                //         'status' => true,
-                                //         'rate' => PassengerRate::where('passenger_id', $request->user_id)->avg('rate'),
-                                //         'comments' => $comments
-                                //     ], 200);   
-                                // }
-                                // catch (Throwable $th) {
-                                //     return response()->json([
-                                //         'status' => false,
-                                //         'message' => $th->getMessage()
-                                //     ], 500);
-                                // }
-        
-    }
+    
 }
