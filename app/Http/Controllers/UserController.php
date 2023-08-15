@@ -137,40 +137,12 @@ class UserController extends Controller
     public function viewProfile(Request $request){
         try{
             $user = auth()->user();
-            if($user->is_driver){
-                $car = Car::where('user_id', $user->id)->first();
-                $carClassification= CarClassification::where('id',$car->classification_id)->first();
-
-                return response()->json(
-                [
-                    'status' => true,
-                    'user' => new UserResource($user),
-                            // 'name' => $user->name, 
-                            // 'profile_img' => $user->profile_img,
-                            // 'rating' => Helper::getRating($user->id),  
-                            // 'mobile_no' => $user->mobile_no,   
-                            // 'is_driver' => $user->is_driver,   
-                                // 'plate' => $car->plate,   
-                                // 'classification' => $carClassification->classification,
-                                // 'capacity' => $car->capacity,   
-                                // 'type' => $car->type,   
-                                // 'color' => $car->color,   
-                ], 200);
-            }
+            
             return response()->json(
                 [
                     'status' => true,
                     'user' => new UserResource($user),
-                            // 'name' => $user->name, 
-                            // 'profile_img' => $user->profile_img,
-                            // 'rating' => Helper::getRating($user->id),   
-                            // 'mobile_no' => $user->mobile_no,   
-                            // 'is_driver' => $user->is_driver,   
-                    'plate' => "",   
-                    'classification' => "",   
-                    'capacity' => "",   
-                    'type' => "",   
-                    'color' => "",   
+                       
                 ], 200);  
         }
         catch (\Throwable $th) {
@@ -388,6 +360,15 @@ class UserController extends Controller
         //otherwise all the fields are filled
         //add new
         $carClassification= CarClassification::where('classification',$request->classification)->first();
+        if(Car::where('user_id', $user->id)->first()){
+            
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'there is a registered car for this user'
+                ], 401);
+            
+        }
         $car = new Car();
         $car->user_id = $user->id ;
         $car->classification_id = $carClassification->id ; //the car calssifications table get the id of the classification that received from the user
