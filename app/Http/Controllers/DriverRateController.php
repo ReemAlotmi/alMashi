@@ -48,7 +48,11 @@ class DriverRateController extends Controller
                     'comment' => $request->comment,
                     'ride_id' => $request->ride_id,
                     'driver_id' => $ride->user_id,
-                ]);   
+                ]); 
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Rate registered successfully'
+                ], 200);  
             }
 
             $rated->update([

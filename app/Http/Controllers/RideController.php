@@ -23,7 +23,7 @@ class RideController extends Controller
                     'departure' => 'required',
                     'destination' => 'required',
                     'price' => 'required|numeric',
-                    'time' => 'date_format:H:i:s'
+                    'time' => 'nullable|date_format:H:i:s'
                 ]);
         if($validateUser->fails()){
             return response()->json([
@@ -158,7 +158,7 @@ class RideController extends Controller
                 'profile_img' => $user->profile_img,
                 'name' => $user->name,
                 'Rating' => Helper::getDriverRating($user->id),
-                'comments' => DriverRate::where('driver_id', $request->user_id)->pluck('comment')
+                'comments' => DriverRate::where('driver_id',  $ride->user_id)->pluck('comment')
             ], 200);
 
         }

@@ -104,7 +104,8 @@ class RequestRideController extends Controller
         try{
             $validateUser = Validator::make($request->header(), 
             [
-                'ride_id' => 'required|numeric',    
+                'ride_id' => 'required',    
+                'ride_id' => 'numeric'   
             ]);
             if($validateUser->fails()){
                 return response()->json([

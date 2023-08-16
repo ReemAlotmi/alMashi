@@ -56,6 +56,10 @@ class PassengerRateController extends Controller
                     'ride_id' => $request->ride_id,
                     'driver_id' => $user->id
                 ]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Rate registered successfully'
+                ], 200);
             }
             
             $rated->update([
