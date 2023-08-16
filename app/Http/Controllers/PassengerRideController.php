@@ -22,7 +22,7 @@ class PassengerRideController extends Controller
             $validateUser = Validator::make($request->all(), 
                 [
                     'departure' => 'required',
-                    'desttination' => 'required'
+                    'destination' => 'required'
                 ]);
             if($validateUser->fails()){
                 return response()->json([

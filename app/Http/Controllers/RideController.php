@@ -21,7 +21,7 @@ class RideController extends Controller
         $validateUser = Validator::make($request->all(), 
                 [
                     'departure' => 'required',
-                    'desttination' => 'required',
+                    'destination' => 'required',
                     'price' => 'required|numeric',
                     'time' => 'date_format:H:i:s'
                 ]);
@@ -137,8 +137,6 @@ class RideController extends Controller
     }
 
     public function driverInfo(Request $request){
-        
-        
         try{
             $validateUser = Validator::make($request->all(), 
             [
@@ -154,14 +152,13 @@ class RideController extends Controller
             }
             $ride= Ride::where('id', $request->ride_id)->first();
             $user = User::where('id', $ride->user_id)->first();
-            $comments = DriverRate::select('comment')->where('driver_id', $request->user_id)->get();
 
             return response()->json([
                 'status' => true,
                 'profile_img' => $user->profile_img,
                 'name' => $user->name,
                 'Rating' => Helper::getDriverRating($user->id),
-                'comments' => $comments 
+                'comments' => DriverRate::where('driver_id', $request->user_id)->pluck('comment')
             ], 200);
 
         }

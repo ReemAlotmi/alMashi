@@ -38,14 +38,13 @@ class RequestRideController extends Controller
             
             $rqst= RequestRide::where('id', $request->request_id)->where('status', 'waiting')->first();
             $psngr= User::find($rqst->user_id);
-            $comments = PassengerRate::select('comment')->where('passenger_id', $psngr->user_id)->get();
 
             return response()->json([
                 'status' => true,
                 'profile_img' => $psngr->profile_img,
                 'name' => $psngr->name,
                 'Rating' => PassengerRate::where('passenger_id', $psngr->id)->avg('rate'),
-                'comments' => $comments 
+                'comments' => PassengerRate::where('passenger_id', $psngr->id)->pluck('comment')
             ], 200);
             
 
@@ -62,7 +61,7 @@ class RequestRideController extends Controller
             $validateUser = Validator::make($request->all(), 
             [
                 'departure' => 'required',
-                'desttination' => 'required',
+                'destination' => 'required',
                 'ride_id' => 'required|numeric'  
             ]);
             if($validateUser->fails()){
