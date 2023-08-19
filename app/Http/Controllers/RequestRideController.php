@@ -98,14 +98,18 @@ class RequestRideController extends Controller
             ], 500);
         }
     }
-
+    
+    // $validateUser = Validator::make($request->header(), 
+    //         [
+    //             'ride_id' => 'required|numeric'  
+    //         ]);
     public function requestStatus(Request $request){
         
         try{
             $validateUser = Validator::make($request->header(), 
             [
                 'ride_id' => 'required',    
-                'ride_id' => 'numeric'   
+                'ride_id' => 'numeric'  
             ]);
             if($validateUser->fails()){
                 return response()->json([

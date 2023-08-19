@@ -339,7 +339,11 @@ class RideController extends Controller
             $user = auth()->user();
             $ride = Ride::where('id', $request->ride_id)->first();
             $rqst = RequestRide::where('ride_id', $ride->id)->where('status', 'accepted')->first();
-            $psnger = PassengerRide::where('user_id', $rqst->user_id)->where('status', 'active')->first();
+            if($rqst){
+                $psnger = PassengerRide::where('user_id', $rqst->user_id)->where('status', 'active')->first();
+                $psnger->update(['status' => 'terminated']);
+                $rqst->update(['status' => 'terminated']);
+            }
             
             if($user->id !== $ride->user_id){
                 return response()->json([
@@ -348,8 +352,6 @@ class RideController extends Controller
                 ], 401);
             }
 
-            $psnger->update(['status' => 'terminated']);
-            $rqst->update(['status' => 'terminated']);
             $ride->update(['status' => 'terminated']);
 
             return response()->json([

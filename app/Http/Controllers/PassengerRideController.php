@@ -32,7 +32,7 @@ class PassengerRideController extends Controller
                 ], 401);
             }
             $user = auth()->user();  
-            
+            //dd($user);
             //must check if this user has an initiated ride at this moment
             $ride = Ride::where('user_id', $user->id)->where('status', ['waiting', 'active'])->first();
             if($ride){
